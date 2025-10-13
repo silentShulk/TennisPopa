@@ -28,30 +28,33 @@ pub struct AvailabilityFormItems {
     pub question_ids: String
 }
 
-pub async fn main_get_forms_responses(form_type: &FormType) -> Result<(), Box<dyn Error>> {
-    let secret = read_application_secret(Path::new("secrets/credentials.json")).await?;
+#[tauri::command]
+pub async fn main_get_forms_responses(form_type: FormType) -> Result<(), String> {
+    let secret = read_application_secret(Path::new("secrets/credentials.json")).await.unwrap();
     let auth = InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::HTTPRedirect)
         .persist_tokens_to_disk("secrets/token.json")
         .build()
-        .await?;
+        .await
+        .unwrap();
 
     let token = auth.token(&[
         "https://www.googleapis.com/auth/forms.responses.readonly"
-    ]).await?;
+    ]).await.unwrap();
     let client = Client::new();
 
     match form_type {
-        FormType::Registration => save_registration_responses(&client, &token).await?,
-        FormType::Availability => save_availability_responses(&client, &token).await?
+        FormType::Registration => save_registration_responses(&client, &token).await.unwrap(),
+        FormType::Availability => save_availability_responses(&client, &token).await.unwrap()
     }
 
     Ok(())
 }
 
-async fn save_registration_responses(client: &Client, token: &AccessToken) -> Result<(), Box<dyn Error>> {
-    let forms_conn = Connection::open("databases/forms.db")?;
+async fn save_registration_responses(client: &Client, token: &AccessToken) -> Result<(), String> {
+    /*
+    let forms_conn = Connection::open("databases/forms.db").unwrap();
     
-    let registration_forms = forms_conn.get_from_table_struct::<RegistrationFormItems>()?; 
+    let registration_forms = forms_conn.get_from_table_struct::<RegistrationFormItems>().unwrap(); 
     let primary_registration_form_opt = registration_forms.iter().find(|&x| x.is_primary);
 
     if primary_registration_form_opt.is_none() {
@@ -67,8 +70,9 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
         .get(&url)
         .bearer_auth(token.as_str())
         .send()
-        .await?;
-    let data: Value = res.json().await?;
+        .await
+        .unwrap();
+    let data: Value = res.json().await.unwrap();
 
     // Get players from form
     // ---------------------
@@ -125,9 +129,9 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
     player_registrations = latest.into_values().collect();
 
     println!("{:?}", player_registrations);
-
+    
     // Push into DB
-    let players_conn = Connection::open("databases/players.db")?;
+    let players_conn = Connection::open("databases/players.db").unwrap();
     for pr in player_registrations.iter() {
         players_conn.execute(
             "INSERT INTO Player (name, email, phone_number, category, date_of_creation, size, id_group)
@@ -140,15 +144,17 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
                 size = excluded.size,
                 id_group = excluded.id_group;",
             params![pr.name, pr.email, pr.phone_number, pr.category, pr.date_of_creation, pr.size, pr.id_group],
-        )?;
+        ).unwrap();
     }
-
+    */
     Ok(())
+     
 }
 
 /// IMPORTANT!
 /// When calling this function make sure to warn the user that it will reset all availabilities for all players!
 async fn save_availability_responses(client: &Client, token: &AccessToken) -> Result<(), Box<dyn Error>> {
+    /* 
     let forms_conn = Connection::open("databases/forms.db")?;
     
     let availability_forms = forms_conn.get_from_table_struct::<AvailabilityFormItems>()?; 
@@ -234,6 +240,6 @@ async fn save_availability_responses(client: &Client, token: &AccessToken) -> Re
     for tp in time_preferences.iter() {
         players_conn.execute("UPDATE Player SET availability = ?1 WHERE email = ?2", params![tp.availability, tp.email])?;
     }
-
+    */
     Ok(())
 }

@@ -40,6 +40,15 @@ pub async fn get_availability_form() -> FormInfo {
     AVAILABILITY_FORM_INFO.clone()
 }
 
+#[tauri::command]
+pub async fn get_registration_form_type() -> FormType {
+    FormType::Registration
+}
+#[tauri::command]
+pub async fn get_availability_form_type() -> FormType {
+    FormType::Availability
+}
+
 lazy_static! {
     pub static ref REGISTRATION_FORM_INFO: FormInfo = FormInfo {
         title: "Registrazione Torneo Sociale".to_string(),

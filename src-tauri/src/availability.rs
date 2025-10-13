@@ -31,12 +31,14 @@ impl Availability {
     pub fn all_slots() -> [Availability; 3] {
         [Availability::SatAft, Availability::SunMor, Availability::SunAft]
     }
-    
-    pub fn slots(&self) -> impl Iterator<Item = Availability> {
+
+    pub fn slots(self) -> impl Iterator<Item = Availability> {
+        let this = self;
         Self::all_slots()
             .into_iter()
-            .filter(|flag| self.contains(*flag))
+            .filter(move |flag| this.contains(*flag))
     }
+
 }
 
 impl<'de> Deserialize<'de> for Availability {

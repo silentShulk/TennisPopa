@@ -48,16 +48,30 @@ async function handleRegistrationClick() {
 
     consoleLog('output', "skibidi piangi no registrazione per te, no sigma")
 }
-
 async function handleAvailabilityClick() {
     // get the registration form first
     const avaiabilityForm = await runBackendCommand('get_availability_form');
-
+    
     // call create_form with the form as argument
     const avaiabilityUrl = await runBackendCommand('create_form', { formInfo: avaiabilityForm });
 
     consoleLog('output', avaiabilityUrl)
 
+}
+
+async function handleRegistrationResponsesClick() {
+    const registrationFormType = await runBackendCommand('get_registration_form_type')
+
+    runBackendCommand('main_get_forms_responses', { formType: registrationFormType})
+
+    consoleLog('output', "Salvate risposte al form di registrazione nel database")
+}
+async function handleAvailabilityResponsesClick() {
+    const availabilityFormType = await runBackendCommand('get_availability_form_type')
+
+    runBackendCommand('main_get_forms_responses', { formType: availabilityFormType})
+
+    consoleLog('output', "Salvate risposte al form di disponibilità nel database")
 }
 
 clearAndInitialize();
@@ -80,14 +94,11 @@ clearAndInitialize();
     </div>
 
     <div class="controls">
-      <button @click="handleRegistrationClick()" class="success">
-        Registrazione fasulla
+      <button @click="handleRegistrationResponsesClick()" class="success">
+        Ottieni resposte registrazione
       </button>
-      <button @click="handleAvailabilityClick()" class="failure">
-        Disponibilità
-      </button>
-      <button @click="clearAndInitialize" class="clear">
-        Clear
+      <button @click="handleAvailabilityResponsesClick()" class="failure">
+        Ottieni risposte disponibilità
       </button>
     </div>
     
