@@ -1,21 +1,9 @@
 <template>
-  <div class="page">
-    <h1>Pagina 1</h1>
-    <p>Questo è il contenuto completo della prima pagina aggiuntiva.</p>
-    
-    <div class="content-section">
-      <h2>Contenuto Specifico Pagina 1</h2>
-      <p>Qui puoi aggiungere tutto il contenuto che desideri per questa pagina.</p>
-      <ul>
-        <li>Elemento 1 della lista</li>
-        <li>Elemento 2 della lista</li>
-        <li>Elemento 3 della lista</li>
-      </ul>
+  <div class="page-container">
+    <div class="page-header">
+      <h1>Gironi Torneo</h1>
     </div>
     
-    <div class="back-navigation">
-      <router-link to="/" class="back-button">← Torna alla Home</router-link>
-    </div>
   </div>
 </template>
 
@@ -26,35 +14,97 @@ export default {
 </script>
 
 <style scoped>
-.page {
-  max-width: 800px;
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+}
+
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-size: 2.5rem;
+}
+
+.page-content {
+  padding: 40px;
+}
+
+.content-card {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.content-section {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin: 30px 0;
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  margin: 25px 0;
+  flex-wrap: wrap;
 }
 
-.back-navigation {
-  margin-top: 40px;
-  text-align: center;
-}
-
-.back-button {
-  display: inline-block;
+.btn {
   padding: 12px 24px;
-  background-color: #6c757d;
-  color: white;
-  text-decoration: none;
+  border: none;
   border-radius: 6px;
-  transition: background-color 0.3s;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-.back-button:hover {
-  background-color: #545b62;
+.btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.btn-secondary {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-success {
+  background: #27ae60;
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  padding: 25px;
+  border-radius: 8px;
+  text-align: center;
+  border-top: 4px solid #e74c3c;
+}
+
+.stat-card h3 {
+  color: #7f8c8d;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #2c3e50;
 }
 </style>

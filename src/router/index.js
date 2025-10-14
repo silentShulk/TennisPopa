@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../pages/FormPage.vue'
 import Page1 from '../pages/Giron.vue'
 import Page2 from '../pages/Player.vue'
+import Page3 from '../pages/GetFormResponsesPage.vue'
 
 const routes = [
   {
@@ -18,6 +19,11 @@ const routes = [
     path: '/Player',
     name: 'Player',
     component: Page2
+  },
+  {
+    path: '/GetFormResponses',
+    name: 'GetFormResponses',
+    component: Page3
   }
 ]
 

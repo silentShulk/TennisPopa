@@ -56,21 +56,6 @@ async function handleAvailabilityClick() {
 
 }
 
-async function handleRegistrationResponsesClick() {
-    const registrationFormType = await runBackendCommand('get_registration_form_type')
-
-    runBackendCommand('main_get_forms_responses', { formType: registrationFormType})
-
-    consoleLog('output', "Salvate risposte al form di registrazione nel database")
-}
-async function handleAvailabilityResponsesClick() {
-    const availabilityFormType = await runBackendCommand('get_availability_form_type')
-
-    runBackendCommand('main_get_forms_responses', { formType: availabilityFormType})
-
-    consoleLog('output', "Salvate risposte al form di disponibilità nel database")
-}
-
 clearAndInitialize();
 
 </script>
@@ -82,48 +67,23 @@ export default {
 </script>
 
 <template>
-  <div class="container">
+  <div class="page-container">
 
-    <h1>Home Page</h1>
-    <p>Questa è la pagina principale</p>
-    
-    <div class="navigation-cards">
-      <router-link to="/Giron" class="nav-card">
-        <div class="card-content">
-          <h3>Pagina 1</h3>
-          <p>Vai alla prima pagina aggiuntiva</p>
-        </div>
-      </router-link>
-      
-      <router-link to="/Player" class="nav-card">
-        <div class="card-content">
-          <h3>Pagina 2</h3>
-          <p>Vai alla seconda pagina aggiuntiva</p>
-        </div>
-      </router-link>
+    <div class="page-header">
+      <h1>Creazione Form</h1>
     </div>
-
+    
     <div class="controls">
-      <button @click="handleRegistrationClick()" class="success">
+      <button class="success" @click="handleRegistrationClick()">
         Registrazione fasulla
       </button>
-      <button @click="handleAvailabilityClick()" class="failure">
+      <button class="failure" @click="handleAvailabilityClick()">
         Disponibilità
       </button>
-      <button @click="clearAndInitialize" class="clear">
+      <button class="clear" @click="clearAndInitialize">
         Clear
       </button>
     </div>
-
-    <div class="controls">
-      <button @click="handleRegistrationResponsesClick()" class="success">
-        Ottieni resposte registrazione
-      </button>
-      <button @click="handleAvailabilityResponsesClick()" class="failure">
-        Ottieni risposte disponibilità
-      </button>
-    </div>
-    
 
     <div class="console">
       <div v-for="(item, index) in consoleOutput" :key="index" :class="['log-entry', item.type]">
@@ -136,48 +96,65 @@ export default {
 
 <style scoped>
 
-.home {
-  text-align: center;
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
 }
 
-.navigation-cards {
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-size: 2.5rem;
+}
+
+.page-header p {
+  color: #7f8c8d;
+  font-size: 1.2rem;
+}
+
+.page-content {
+  padding: 40px;
+}
+
+.content-card {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.content-card h2 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
-  margin-top: 40px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 30px;
 }
 
-.nav-card {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-}
-
-.card-content {
-  padding: 30px 20px;
-  border: 2px solid #e0e0e0;
+.feature-card {
+  background: #f8f9fa;
+  padding: 20px;
   border-radius: 8px;
-  transition: all 0.3s ease;
-  background: white;
+  border-left: 4px solid #3498db;
 }
 
-.card-content:hover {
-  border-color: #007acc;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.card-content h3 {
-  margin: 0 0 10px 0;
-  color: #007acc;
-}
-
-.card-content p {
-  margin: 0;
-  color: #666;
+.feature-card h3 {
+  color: #2c3e50;
+  margin-bottom: 10px;
 }
 
 /* Minimalist, focused styling */
@@ -195,11 +172,16 @@ export default {
 }
 
 .controls button {
-  padding: 8px 12px;
-  border: 1px solid #444;
-  background-color: #333;
-  color: #fff;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  font-family: inherit;
 }
 
 /* Console Styling */

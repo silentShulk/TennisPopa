@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::forms::forms_info::FormType;
-use crate::{availability::Availability, player::Player};
+use crate::players::{Availability, Player, player::VecPlayerFuzzyFinder};
 
 #[derive(Debug, Clone, Serialize, Deserialize, RusqliteStruct)]
 pub struct RegistrationFormItems {
@@ -51,7 +51,8 @@ pub async fn main_get_forms_responses(form_type: FormType) -> Result<(), String>
 }
 
 async fn save_registration_responses(client: &Client, token: &AccessToken) -> Result<(), String> {
-    /*
+    println!("regi");
+    
     let forms_conn = Connection::open("databases/forms.db").unwrap();
     
     let registration_forms = forms_conn.get_from_table_struct::<RegistrationFormItems>().unwrap(); 
@@ -127,9 +128,11 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
             .or_insert(r.clone());
     }
     player_registrations = latest.into_values().collect();
-
-    println!("{:?}", player_registrations);
     
+    for (i, p) in player_registrations.search_by_name("Eric Bona".to_string()).iter().enumerate() {
+        println!("{i}: {:?}", p.name);
+    }
+
     // Push into DB
     let players_conn = Connection::open("databases/players.db").unwrap();
     for pr in player_registrations.iter() {
@@ -146,7 +149,7 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
             params![pr.name, pr.email, pr.phone_number, pr.category, pr.date_of_creation, pr.size, pr.id_group],
         ).unwrap();
     }
-    */
+
     Ok(())
      
 }
@@ -154,7 +157,8 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
 /// IMPORTANT!
 /// When calling this function make sure to warn the user that it will reset all availabilities for all players!
 async fn save_availability_responses(client: &Client, token: &AccessToken) -> Result<(), Box<dyn Error>> {
-    /* 
+    println!("dispo");
+    
     let forms_conn = Connection::open("databases/forms.db")?;
     
     let availability_forms = forms_conn.get_from_table_struct::<AvailabilityFormItems>()?; 
@@ -240,6 +244,10 @@ async fn save_availability_responses(client: &Client, token: &AccessToken) -> Re
     for tp in time_preferences.iter() {
         players_conn.execute("UPDATE Player SET availability = ?1 WHERE email = ?2", params![tp.availability, tp.email])?;
     }
-    */
+
+    for p in players_conn.get_from_table_struct::<Player>().unwrap() {
+        println!("{:?}\n", p.availability);
+    }
+    
     Ok(())
 }

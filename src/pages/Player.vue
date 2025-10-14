@@ -1,31 +1,14 @@
 <template>
-  <div class="page">
-    <h1>Pagina 2</h1>
-    <p>Questo è il contenuto completo della seconda pagina aggiuntiva.</p>
-    
-    <div class="content-section">
-      <h2>Contenuto Specifico Pagina 2</h2>
-      <p>Qui puoi aggiungere contenuti diversi per la seconda pagina.</p>
-      
-      <div class="feature-grid">
-        <div class="feature">
-          <h3>Funzionalità A</h3>
-          <p>Descrizione della funzionalità A</p>
-        </div>
-        <div class="feature">
-          <h3>Funzionalità B</h3>
-          <p>Descrizione della funzionalità B</p>
-        </div>
-        <div class="feature">
-          <h3>Funzionalità C</h3>
-          <p>Descrizione della funzionalità C</p>
-        </div>
-      </div>
+  <div class="page-container">
+    <div class="page-header">
+      <h1>Anagrafiche</h1>
     </div>
-    
-    <div class="back-navigation">
-      <router-link to="/" class="back-button">← Torna alla Home</router-link>
-    </div>
+    <input
+      type="text"
+      v-model="searchTerm"
+      placeholder="Cerca persone..."
+      class="search-input"
+    />
   </div>
 </template>
 
@@ -36,54 +19,131 @@ export default {
 </script>
 
 <style scoped>
-.page {
-  max-width: 800px;
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+}
+
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-size: 2.5rem;
+}
+
+.page-content {
+  padding: 40px;
+}
+
+.content-card {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.content-section {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin: 30px 0;
-}
-
-.feature-grid {
+.charts-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  margin: 25px 0;
 }
 
-.feature {
-  padding: 20px;
+.chart-placeholder {
   background: #f8f9fa;
-  border-radius: 6px;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.mock-chart {
+  display: flex;
+  align-items: end;
+  height: 200px;
+  gap: 10px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #ddd;
+}
+
+.bar {
+  flex: 1;
+  background: #3498db;
+  border-radius: 4px 4px 0 0;
+  min-height: 20px;
+}
+
+.data-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.data-card {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
   text-align: center;
+  border-left: 4px solid #27ae60;
 }
 
-.feature h3 {
-  margin: 0 0 10px 0;
-  color: #007acc;
+.data-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 5px 0;
 }
 
-.back-navigation {
-  margin-top: 40px;
-  text-align: center;
+.data-percent {
+  color: #27ae60;
+  font-weight: 600;
 }
 
-.back-button {
-  display: inline-block;
-  padding: 12px 24px;
-  background-color: #6c757d;
-  color: white;
-  text-decoration: none;
+.reports-section {
+  margin-top: 30px;
+}
+
+.report-list {
+  margin-top: 15px;
+}
+
+.report-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  background: #f8f9fa;
+  margin-bottom: 10px;
   border-radius: 6px;
-  transition: background-color 0.3s;
+  border-left: 4px solid #f39c12;
 }
 
-.back-button:hover {
-  background-color: #545b62;
+.report-title {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.report-date {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+.search-input{
+  width: 50%;
+  padding: 12px 20px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .charts-container {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

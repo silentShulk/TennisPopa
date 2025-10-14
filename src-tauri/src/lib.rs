@@ -1,7 +1,5 @@
 mod forms;
-mod player;
-mod availability;
-mod round;
+mod players;
 
 use forms::create_forms::create_form;
 use forms::forms_info::*;

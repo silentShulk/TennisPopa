@@ -7,11 +7,6 @@ use serde_json::json;
 
 use crate::forms::forms_info::*;
 
-// pub async fn main_create_forms() {
-//     println!("{}", create_form(REGISTRATION_FORM_INFO).await.unwrap());
-//     println!("{}", create_form(AVAILABILITY_FORM_INFO).await.unwrap());
-// }
-
 #[tauri::command]
 pub async fn create_form(form_info: FormInfo) -> Result<String, String> {
     let secret = read_application_secret(Path::new("secrets/credentials.json")).await.unwrap();
@@ -87,30 +82,32 @@ pub async fn create_form(form_info: FormInfo) -> Result<String, String> {
 
     let question_ids_joined = question_ids.join("~");
     
-    // let conn = Connection::open("databases/forms.db").unwrap();
-    // match form_info.form_type {
-    //     FormType::Registration => {
-    //         conn.insert_into_table_struct(
-    //             &RegistrationFormItems {
-    //                 id: None,
-    //                 is_primary: false,
-    //                 form_url: form_url.clone(),
-    //                 form_id: form_id.to_string(),
-    //                 question_ids: question_ids_joined
-    //             }
-    //         ).unwrap();
-    //     },
-    //     FormType::Availability => {
-    //         conn.insert_into_table_struct(
-    //             &AvailabilityFormItems {
-    //                 id: None,
-    //                 form_url: form_url.clone(),
-    //                 form_id: form_id.to_string(),
-    //                 question_ids: question_ids_joined
-    //             }
-    //         ).unwrap();
-    //     },
-    // };
-
+    /*
+    let conn = Connection::open("databases/forms.db").unwrap();
+    match form_info.form_type {
+        FormType::Registration => {
+            conn.insert_into_table_struct(
+                &RegistrationFormItems {
+                    id: None,
+                    is_primary: false,
+                    form_url: form_url.clone(),
+                    form_id: form_id.to_string(),
+                    question_ids: question_ids_joined
+                }
+            ).unwrap();
+        },
+        FormType::Availability => {
+            conn.insert_into_table_struct(
+                &AvailabilityFormItems {
+                    id: None,
+                    form_url: form_url.clone(),
+                    form_id: form_id.to_string(),
+                    question_ids: question_ids_joined
+                }
+            ).unwrap();
+        },
+    };
+    */
+    
     return Ok(form_url);
 }
