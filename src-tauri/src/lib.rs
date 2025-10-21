@@ -4,6 +4,7 @@ mod players;
 use forms::create_forms::create_form;
 use forms::forms_info::*;
 use forms::get_forms_responses::main_get_forms_responses;
+use crate::players::player::*;
 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,7 +16,9 @@ pub fn run() {
                                                 get_availability_form,
                                                 main_get_forms_responses,
                                                 get_registration_form_type,
-                                                get_availability_form_type])
+                                                get_availability_form_type,
+                                                find_player,
+                                                update_spec_player])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

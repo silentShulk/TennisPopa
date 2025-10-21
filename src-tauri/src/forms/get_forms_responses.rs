@@ -128,10 +128,6 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
             .or_insert(r.clone());
     }
     player_registrations = latest.into_values().collect();
-    
-    for (i, p) in player_registrations.search_by_name("Eric Bona".to_string()).iter().enumerate() {
-        println!("{i}: {:?}", p.name);
-    }
 
     // Push into DB
     let players_conn = Connection::open("databases/players.db").unwrap();

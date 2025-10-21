@@ -33,6 +33,13 @@
         >
           Anagrafiche
         </router-link>
+        <router-link 
+          to="/Schedule" 
+          class="nav-link"
+          :class="{ active: $route.path === '/Schedule' }"
+        >
+          Orari Campi
+        </router-link>
       </nav>
     </div>
 

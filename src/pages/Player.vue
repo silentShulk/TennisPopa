@@ -1,22 +1,23 @@
-<template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1>Anagrafiche</h1>
-    </div>
-    <input
-      type="text"
-      v-model="searchTerm"
-      placeholder="Cerca persone..."
-      class="search-input"
-    />
-  </div>
-</template>
+<script setup>
+import { ref, computed } from 'vue'
+import SearchPlayer from './SearchPlayer.vue';
+</script>
 
 <script>
 export default {
   name: 'Page2'
 }
 </script>
+
+<template>
+  <div class="page-container">
+    <div class="page-header">
+      <h1>Anagrafiche</h1>
+    </div>
+    <SearchPlayer
+    />
+  </div>
+</template>
 
 <style scoped>
 .page-container {
