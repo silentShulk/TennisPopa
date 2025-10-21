@@ -1,11 +1,5 @@
-<template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1>Gironi Torneo</h1>
-    </div>
-    
-  </div>
-</template>
+import Group from '@/components/group.vue';
+
 
 <script>
 export default {
@@ -13,7 +7,225 @@ export default {
 }
 </script>
 
+
+
+<template>
+  <div class="page-container">
+    <div class="page-header">
+      <h1>Gironi Torneo</h1>
+    </div>
+      <div class="categorySelection">
+        <h1 class="categoria"> Categoria: </h1>
+        <select id="categoriaComboBox">
+          <option value="" selected disabled> Seleziona una categoria </option>
+          <option value="A1"> A1 </option>
+          <option value="A2"> A2 </option>
+          <option value="B1"> B1 </option>
+          <option value="B2"> B2 </option>
+          <option value="C"> C </option>
+          <option value="D"> D </option>
+          <option value="E"> E </option>
+        </select>
+      </div>
+
+
+      <div class="groups">
+        <Group/>
+
+
+        <div class="group">
+          <p class="name"> Nome 1 </p>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 2 </p>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 3 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 4 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+        </div>
+
+
+        <div class="group">
+          <p class="name"> Nome 1 </p>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 2 </p>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 3 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 4 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+        </div>
+
+
+        <div class="group">
+          <p class="name"> Nome 1 </p>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 2 </p>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 3 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 4 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+        </div>
+
+
+        <div class="group">
+          <p class="name"> Nome 1 </p>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 2 </p>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 3 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 4 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+        </div>
+
+
+        <div class="group">
+          <p class="name"> Nome 1 </p>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 2 </p>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 3 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+          <div class="cell"></div>
+
+          <p class="name"> Nome 4 </p>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell"></div>
+          <div class="cell filled"></div>
+        </div>
+      </div>
+  </div>
+</template>
+
+
+
 <style scoped>
+select {
+  font-size: 20px;
+
+  border-radius: 10px;
+}
+
+.categorySelection {
+  display: flex;
+  gap: 10px;
+  padding: 5px;
+  margin: 5px;
+}
+
+  .groups {
+    display: grid;              /* Uses CSS Grid layout for easy row/column definition */
+    grid-template-columns: repeat(3, 300px);  /* 3 equal columns, each 100px wide */
+    grid-template-rows: repeat(2, 250px);     /* 3 equal rows, each 100px tall */
+    padding: 2px;                       /* Small padding inside the grid for clean edges */
+    margin: 20px auto;
+    gap: 2px;
+  }
+
+  .name {
+    background: transparent;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+
+  /* Container for the entire 3x3 grid */
+  .group {
+    display: grid;
+    grid-template-columns: repeat(5, 50px);   /* Unchanged: Inner 5 cols. */
+    grid-template-rows: repeat(4, 50px);      /* Unchanged: Inner 4 rows. */
+    gap: 0;                                   /* Unchanged from inner fix: For inner lines. */
+    padding: 5px;                             /* Unchanged: Hugs inner lines. */
+    margin: 20px auto;                        /* Unchanged. */
+  }
+        
+  /* Base style for every individual cell */
+  .cell {
+    border: 2px solid black;              /* Red border around each cell */
+    display: flex;                      /* Flexbox for potential centering of content */
+    align-items: center;                /* Vertically centers any child elements */
+    justify-content: center;            /* Horizontally centers any child elements */
+    background-color: white;            /* White background for empty cells */
+  }
+        
+  /* Style override for filled (oval) cells */
+  .filled {
+    background-color: black;              /* Solid red fill to match image ovals */
+  }
+
+
 .page-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);

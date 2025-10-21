@@ -53,7 +53,7 @@
         </div>
 
         <div class="detail-item">
-          <strong>Disponibilità: </strong> {{ selectPlayer.availability }}
+          <strong>Disponibilità: </strong> {{ selectedPlayer.availability }}
         </div>
 
         <div class="detail-item">
