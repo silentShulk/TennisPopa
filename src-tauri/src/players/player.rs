@@ -45,8 +45,7 @@ pub fn find_player(name: String) -> Vec<Player>{
 
 #[tauri::command]
 pub fn update_spec_player(update_player: Player){
-
-    todo!("AGGIORNARE L'ANAGRAFICA DEL PLAYER");
+    println!("{:?}", update_player);
 
     let players_conn = Connection::open("databases/players.db").unwrap();
     /* 

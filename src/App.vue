@@ -1,3 +1,6 @@
+import Group from '@/components/group.vue'; 
+
+
 <template>
   <div id="app">
     <div class="sidebar">
@@ -20,9 +23,9 @@
           Ottieni Riposte Form
         </router-link>
         <router-link 
-          to="/Giron" 
+          to="/Groups" 
           class="nav-link"
-          :class="{ active: $route.path === '/Giron' }"
+          :class="{ active: $route.path === '/Groups' }"
         >
           Gironi
         </router-link>

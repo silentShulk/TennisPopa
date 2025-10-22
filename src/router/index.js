@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../pages/FormPage.vue'
-import Page1 from '../pages/Giron.vue'
+import Page1 from '../pages/Groups.vue'
 import Page2 from '../pages/Player.vue'
 import Page3 from '../pages/GetFormResponsesPage.vue'
 import Page4 from '../pages/Schedule.vue'
@@ -12,8 +12,8 @@ const routes = [
     component: Home
   },
   {
-    path: '/Giron',
-    name: 'Giron',
+    path: '/Groups',
+    name: 'Groups',
     component: Page1
   },
   {

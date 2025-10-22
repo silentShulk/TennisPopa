@@ -57,7 +57,7 @@
         </div>
 
         <div class="detail-item">
-          <strong>Taglia:</strong> 
+          <strong>Taglia: </strong> 
           <span class="value-badge size-badge">{{ getSizeText(selectedPlayer.size) }}</span>
         </div>
 
@@ -70,30 +70,30 @@
       <div v-else class="edit-mode">
 
         <div class="detail-item">
-          <strong>Nome:</strong>
+          <strong>Nome: </strong>
           <input v-model="editedPlayer.name" type="text" class="edit-input" />
         </div>
 
         <div class="detail-item">
-          <strong>Email:</strong> {{ selectedPlayer.email }} <em>(non modificabile)</em>
+          <strong>Email: </strong> {{ selectedPlayer.email }} <em> (non modificabile)</em>
         </div>
 
         <div class="detail-item">
-          <strong>Telefono:</strong>
+          <strong>Telefono: </strong>
           <input v-model="editedPlayer.phone_number" type="text" class="edit-input" />
         </div>
 
         <div class="detail-item">
-          <strong>Categoria:</strong>
+          <strong>Categoria: </strong>
           <select v-model="editedPlayer.category" class="edit-select">
-            <option value="0">Sconosciuta</option>
-            <option value="1">E</option>
-            <option value="2">D</option>
-            <option value="3">C</option>
-            <option value="4">B1</option>
-            <option value="5">B2</option>
-            <option value="6">A1</option>
-            <option value="7">A2</option>
+            <option :value="0">Sconosciuta</option>
+            <option :value="1">E</option>
+            <option :value="2">D</option>
+            <option :value="3">C</option>
+            <option :value="4">B1</option>
+            <option :value="5">B2</option>
+            <option :value="6">A1</option>
+            <option :value="7">A2</option>
           </select>
         </div>
 
@@ -117,11 +117,11 @@
         <div class="detail-item">
           <strong>Taglia:</strong>
           <select v-model="editedPlayer.size" class="edit-select">
-            <option value="0">XS</option>
-            <option value="1">S</option>
-            <option value="2">M</option>
-            <option value="3">L</option>
-            <option value="4">XL</option>
+            <option :value="0">XS</option>
+            <option :value="1">S</option>
+            <option :value="2">M</option>
+            <option :value="3">L</option>
+            <option :value="4">XL</option>
           </select>
         </div>
         
@@ -271,13 +271,18 @@ const saveChanges = async () => {
     }
 
     editedPlayer.value.availability = calculateAvailabilityValue()
-    
     editedPlayer.value.email = selectedPlayer.value.email
     
+    alert(editedPlayer.value.name         + " " +
+          editedPlayer.value.category     + " " +
+          editedPlayer.value.availability + " " +
+          editedPlayer.value.size         + " " 
+    );
+
     console.log('Dati da inviare:', editedPlayer.value)
     
     await invoke('update_spec_player', { updatePlayer: editedPlayer.value })
-    
+
     selectedPlayer.value = { ...editedPlayer.value }
     isEditing.value = false
     editedPlayer.value = null
@@ -292,7 +297,7 @@ const saveChanges = async () => {
   // DEBUG _______________________________________________
   const handleSaveError = (error) => {
   let errorMessage = 'Errore nel salvataggio delle modifiche'
-  
+  alert("AAA")
   if (typeof error === 'string') {
     if (error.includes('missing required key')) {
       errorMessage = 'Errore di configurazione: parametri mancanti per aggiornare il player.'
