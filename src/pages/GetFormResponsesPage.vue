@@ -2,75 +2,50 @@
 import { ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 
-const consoleOutput = ref([]);
-
-// Clears console and adds an initial message
-const clearAndInitialize = () => {
-    consoleOutput.value = [];
-};
-
-function consoleLog(resultType, functionResult) {
-  const formatted =
-    typeof functionResult === 'object'
-      ? JSON.stringify(functionResult, null, 2)
-      : functionResult;
-
-  consoleOutput.value.push({
-    type: resultType,
-    message: `Result: ${formatted}`,
-  });
-}
+const registrationMessage = ref('');
+const availabilityMessage = ref('');
 
 // Calls the Rust backend command
 async function runBackendCommand(commandName, commandArgs = {}) {
     try {
         const result = await invoke(commandName, {...commandArgs});
-
-        return result
+        return result;
     } catch (error) {
-        consoleLog('error', error)
-
-        throw error
+        throw error;
     } 
 }
 
+async function Aiiii() {
+  await runBackendCommand('create_group');
+}
+
 async function handleRegistrationResponsesClick() {
-    const registrationFormType = await runBackendCommand('get_registration_form_type')
-
-    runBackendCommand('main_get_forms_responses', { formType: registrationFormType})
-
+    try {
+        const formType = await runBackendCommand('get_registration_form_type');
+        await runBackendCommand('main_get_forms_responses', { formType });
+        registrationMessage.value = 'Operazione completata con successo';
+        registrationMessageType.value = 'success';
+    } catch (error) {
+        registrationMessage.value = `Errore: ${error.message}`;
+        registrationMessageType.value = 'error';
+    }
 }
+
 async function handleAvailabilityResponsesClick() {
-    const availabilityFormType = await runBackendCommand('get_availability_form_type')
-
-    runBackendCommand('main_get_forms_responses', { formType: availabilityFormType})
-
+    try {
+        const formType = await runBackendCommand('get_availability_form_type');
+        await runBackendCommand('main_get_forms_responses', { formType });
+        availabilityMessage.value = 'Operazione completata con successo';
+        availabilityMessageType.value = 'success';
+    } catch (error) {
+        availabilityMessage.value = `Errore: ${error.message}`;
+        availabilityMessageType.value = 'error';
+    }
 }
+
+const registrationMessageType = ref('');
+const availabilityMessageType = ref('');
 </script>
-
-<template>
-    <div class="page-container">
-        <div class="page-header">
-        <h1>Ottieni Riposte Form</h1>
-        </div>
-
-        <div class="controls">
-            <button class="success" @click="handleRegistrationResponsesClick()">
-            Ottieni risposte registrazione
-            </button>
-            <button class="failure" @click="handleAvailabilityResponsesClick()">
-            Ottieni risposte disponibilità
-            </button>
-        </div>
-
-        <div class="console">
-            <div v-for="(item, index) in consoleOutput" :key="index" :class="['log-entry', item.type]">
-                {{ item.message }}
-            </div>
-        </div>
-    </div>
-  
-</template>
 
 <script>
 export default {
@@ -78,159 +53,213 @@ export default {
 }
 </script>
 
-<style scoped>
-.console {
-  height: 200px;
-  padding: 5px;
-  background-color: #1e1e1e;
-  border: 1px solid #555;
-  overflow-y: auto;
-  font-size: 0.85em;
-}
+<template>
+  <div class="page-container">
+    <div class="page-header">
+      <h1>Ottieni Risposte Form</h1>
+      <p>Recupera le risposte dai tuoi form compilati</p>
+    </div>
+    
+    <div class="forms-container">
+      <div class="form-card">
+        <h2 class="card-title">Risposte Registrazione</h2>
+        <div class="button-message-container">
+          <button 
+            class="generate-btn primary" 
+            @click="handleRegistrationResponsesClick"
+            :disabled="!!registrationMessage"
+          >
+            Ottieni risposte
+          </button>
+          <div v-if="registrationMessage" class="message-display" :class="registrationMessageType">
+            {{ registrationMessage }}
+          </div>
+          <div v-else class="placeholder">Clicca per ottenere le risposte</div>
+        </div>
+      </div>
+      <div>
+        <button @click="Aiiii"> SKIBIDI RIZZ
+        </button>
+      </div>
+      <div class="form-card">
+        <h2 class="card-title">Risposte Disponibilità</h2>
+        <div class="button-message-container">
+          <button 
+            class="generate-btn secondary" 
+            @click="handleAvailabilityResponsesClick"
+            :disabled="!!availabilityMessage"
+          >
+            Ottieni risposte
+          </button>
+          <div v-if="availabilityMessage" class="message-display" :class="availabilityMessageType">
+            {{ availabilityMessage }}
+          </div>
+          <div v-else class="placeholder">Clicca per ottenere le risposte</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
+<style scoped>
 .page-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .page-header {
   background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
+  padding: 2rem;
   text-align: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .page-header h1 {
   color: #2c3e50;
-  margin-bottom: 10px;
-  font-size: 2.5rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 2.8rem;
+  font-weight: 300;
+  letter-spacing: -0.5px;
 }
 
-.page-content {
-  padding: 40px;
+.page-header p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  margin: 0;
 }
 
-.content-card {
-  background: white;
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  max-width: 1000px;
+.forms-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  padding: 3rem 2rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.charts-container {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
-  margin: 25px 0;
+.form-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.chart-placeholder {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
+.form-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
-.mock-chart {
-  display: flex;
-  align-items: end;
-  height: 200px;
-  gap: 10px;
-  padding: 20px;
-  background: white;
-  border: 1px solid #ddd;
+.card-title {
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.6rem;
+  font-weight: 400;
+  text-align: center;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
 }
 
-.bar {
-  flex: 1;
-  background: #3498db;
-  border-radius: 4px 4px 0 0;
-  min-height: 20px;
-}
-
-.data-grid {
+.button-message-container {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-}
-
-.data-card {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-  border-left: 4px solid #27ae60;
-}
-
-.data-value {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #2c3e50;
-  margin: 5px 0;
-}
-
-.data-percent {
-  color: #27ae60;
-  font-weight: 600;
-}
-
-.reports-section {
-  margin-top: 30px;
-}
-
-.report-list {
-  margin-top: 15px;
-}
-
-.report-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px;
-  background: #f8f9fa;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  border-left: 4px solid #f39c12;
-}
-
-.report-title {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.report-date {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-.search-input{
-  width: 50%;
-  padding: 12px 20px;
-  border: 2px solid #ddd;
-  border-radius: 10px;
-  font-size: 14px;
-}
-.controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.controls button {
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 1rem;
+}
+
+.generate-btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: inherit;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+.generate-btn.primary {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+}
+
+.generate-btn.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
+}
+
+.generate-btn.secondary {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
+}
+
+.generate-btn.secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(67, 233, 123, 0.5);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.message-display {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+  word-break: break-word;
+}
+
+.message-display.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message-display.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.placeholder {
+  color: #adb5bd;
+  font-style: italic;
+  text-align: center;
+  width: 100%;
+  padding: 1rem;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .charts-container {
+  .forms-container {
     grid-template-columns: 1fr;
+    padding: 2rem 1rem;
+    gap: 1.5rem;
+  }
+
+  .form-card {
+    padding: 1.5rem;
+  }
+
+  .card-title {
+    font-size: 1.4rem;
+  }
+
+  .generate-btn {
+    min-width: 120px;
   }
 }
 </style>

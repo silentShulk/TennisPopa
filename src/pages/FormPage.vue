@@ -2,62 +2,47 @@
 import { ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 
-const consoleOutput = ref([]);
-
-// Clears console and adds an initial message
-const clearAndInitialize = () => {
-    consoleOutput.value = [];
-};
-
-function consoleLog(resultType, functionResult) {
-  const formatted =
-    typeof functionResult === 'object'
-      ? JSON.stringify(functionResult, null, 2)
-      : functionResult;
-
-  consoleOutput.value.push({
-    type: resultType,
-    message: `Result: ${formatted}`,
-  });
-}
+const registrationUrl = ref('');
+const availabilityUrl = ref('');
 
 // Calls the Rust backend command
 async function runBackendCommand(commandName, commandArgs = {}) {
     try {
         const result = await invoke(commandName, {...commandArgs});
-
-        return result
+        return result;
     } catch (error) {
-        consoleLog('error', error)
-
-        throw error
+        throw error;
     } 
 }
 
 async function handleRegistrationClick() {
-    // get the registration form first
-    // const registrationForm = await runBackendCommand('get_registration_form');
-
-    // // call create_form with the form as argument
-    // const registrationUrl = await runBackendCommand('create_form', { formInfo: registrationForm });
-
-    // consoleLog('output', registrationUrl)
-
-    consoleLog('output', "skibidi piangi no registrazione per te, no sigma")
+    try {
+        const registrationForm = await runBackendCommand('get_registration_form');
+        const url = await runBackendCommand('create_form', { formInfo: registrationForm });
+        registrationUrl.value = url;
+    } catch (error) {
+        registrationUrl.value = `Error: ${error.message}`;
+    }
 }
+
 async function handleAvailabilityClick() {
-    // get the registration form first
-    const avaiabilityForm = await runBackendCommand('get_availability_form');
-    
-    // call create_form with the form as argument
-    const avaiabilityUrl = await runBackendCommand('create_form', { formInfo: avaiabilityForm });
-
-    consoleLog('output', avaiabilityUrl)
-
+    try {
+        const availabilityForm = await runBackendCommand('get_availability_form');
+        const url = await runBackendCommand('create_form', { formInfo: availabilityForm });
+        availabilityUrl.value = url;
+    } catch (error) {
+        availabilityUrl.value = `Error: ${error.message}`;
+    }
 }
 
-clearAndInitialize();
-
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        // Optional: Add a visual feedback here if needed
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+    }
+}
 </script>
 
 <script>
@@ -68,142 +53,246 @@ export default {
 
 <template>
   <div class="page-container">
-
     <div class="page-header">
       <h1>Creazione Form</h1>
+      <p>Genera link personalizzati per i tuoi form in un clic</p>
     </div>
     
-    <div class="controls">
-      <button class="success" @click="handleRegistrationClick()">
-        Registrazione fasulla
-      </button>
-      <button class="failure" @click="handleAvailabilityClick()">
-        Disponibilità
-      </button>
-      <button class="clear" @click="clearAndInitialize">
-        Clear
-      </button>
-    </div>
+    <div class="forms-container">
+      <div class="form-card">
+        <h2 class="card-title">Registrazione</h2>
+        <div class="button-link-container">
+          <button 
+            class="generate-btn primary" 
+            @click="handleRegistrationClick"
+            :disabled="!!registrationUrl"
+          >
+            Genera Link
+          </button>
+          <div v-if="registrationUrl" class="link-display">
+            <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="url-link">
+              {{ registrationUrl }}
+            </a>
+            <button class="copy-btn" @click="copyToClipboard(registrationUrl)">
+              📋 Copia
+            </button>
+          </div>
+          <div v-else class="placeholder">Clicca per generare il link</div>
+        </div>
+      </div>
 
-    <div class="console">
-      <div v-for="(item, index) in consoleOutput" :key="index" :class="['log-entry', item.type]">
-        {{ item.message }}
+      <div class="form-card">
+        <h2 class="card-title">Disponibilità</h2>
+        <div class="button-link-container">
+          <button 
+            class="generate-btn secondary" 
+            @click="handleAvailabilityClick"
+            :disabled="!!availabilityUrl"
+          >
+            Genera Link
+          </button>
+          <div v-if="availabilityUrl" class="link-display">
+            <a :href="availabilityUrl" target="_blank" rel="noopener noreferrer" class="url-link">
+              {{ availabilityUrl }}
+            </a>
+            <button class="copy-btn" @click="copyToClipboard(availabilityUrl)">
+              📋 Copia
+            </button>
+          </div>
+          <div v-else class="placeholder">Clicca per generare il link</div>
+        </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <style scoped>
-
 .page-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .page-header {
   background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
+  padding: 2rem;
   text-align: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .page-header h1 {
   color: #2c3e50;
-  margin-bottom: 10px;
-  font-size: 2.5rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 2.8rem;
+  font-weight: 300;
+  letter-spacing: -0.5px;
 }
 
 .page-header p {
   color: #7f8c8d;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  margin: 0;
 }
 
-.page-content {
-  padding: 40px;
-}
-
-.content-card {
-  background: white;
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.content-card h2 {
-  color: #2c3e50;
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-}
-
-.features-grid {
+.forms-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.feature-card {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  border-left: 4px solid #3498db;
-}
-
-.feature-card h3 {
-  color: #2c3e50;
-  margin-bottom: 10px;
-}
-
-/* Minimalist, focused styling */
-.container {
-  padding: 10px;
-  font-family: monospace;
-  max-width: 600px;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  padding: 3rem 2rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
+.form-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.controls button {
+.form-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.card-title {
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.6rem;
+  font-weight: 400;
+  text-align: center;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+.button-link-container {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 1rem;
+}
+
+.generate-btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: inherit;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Console Styling */
-.console {
-  height: 200px;
-  padding: 5px;
-  background-color: #1e1e1e;
-  border: 1px solid #555;
-  overflow-y: auto;
-  font-size: 0.85em;
+.generate-btn.primary {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
 }
 
-/* Log Entry Styling */
-.log-entry.output {
-  color: #00ff00; /* Green */
+.generate-btn.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
 }
 
-.log-entry.error {
-  color: #ff5555; /* Red */
+.generate-btn.secondary {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
 }
 
-.log-entry.info {
-  color: #8888ff; /* Blue */
+.generate-btn.secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(67, 233, 123, 0.5);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.link-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.url-link {
+  color: #4facfe;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  max-width: 250px;
+  text-align: center;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: color 0.3s ease;
+}
+
+.url-link:hover {
+  color: #00f2fe;
+  text-decoration: underline;
+}
+
+.copy-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #6c757d;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.3s ease;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: #5a6268;
+}
+
+.placeholder {
+  color: #adb5bd;
+  font-style: italic;
+  text-align: center;
+  width: 100%;
+  padding: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .forms-container {
+    grid-template-columns: 1fr;
+    padding: 2rem 1rem;
+    gap: 1.5rem;
+  }
+
+  .form-card {
+    padding: 1.5rem;
+  }
+
+  .card-title {
+    font-size: 1.4rem;
+  }
+
+  .generate-btn {
+    min-width: 120px;
+  }
+
+  .url-link {
+    max-width: 100%;
+    font-size: 0.8rem;
+  }
 }
 </style>

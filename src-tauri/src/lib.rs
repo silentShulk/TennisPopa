@@ -18,7 +18,8 @@ pub fn run() {
                                                 get_registration_form_type,
                                                 get_availability_form_type,
                                                 find_player,
-                                                update_spec_player])
+                                                update_spec_player,
+                                                create_group])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
