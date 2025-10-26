@@ -1,7 +1,30 @@
-<script>
+<script setup>
+import { invoke } from '@tauri-apps/api/core';
 import Group from '../components/Group.vue';
+import { ref, watch } from 'vue'
+
+const category = ref('');
+const groups = ref([]); // Per memorizzare i gruppi
+
+async function selectedCategory() {
+  try {
+    const result = await invoke('groups_in_category', { category: category.value });
+    groups.value = Array.isArray(result) ? result : [];
+  } catch (error) {
+    alert('Errore durante la chiamata a groups_in_category: ' + error);
+    console.error('Errore durante la chiamata a groups_in_category:', error);
+    groups.value = [];
+  }
+}
+
+function create_excel(){
+  invoke('create_excel_group', {})
+}
+
+</script>
+<script>
 export default {
-  name: 'SomePage',
+  name: 'Groups',
   components: { Group },
   data() {
     return {
@@ -11,25 +34,26 @@ export default {
 };
 </script>
 
+
 <template>
   <div class="page-container">
     <div class="page-header">
       <h1>Gironi Torneo</h1>
-      <p>Gestisci e visualizza i gironi del torneo per categoria</p>
     </div>
     <div class="category-section">
       <div class="category-card">
         <label for="categoriaComboBox" class="category-label">Seleziona Categoria:</label>
-        <select id="categoriaComboBox" class="category-select">
+        <select id="categoriaComboBox" class="category-select" v-model="category" @change="selectedCategory">
           <option value="" selected disabled>Seleziona una categoria</option>
-          <option value="A1">A1</option>
-          <option value="A2">A2</option>
-          <option value="B1">B1</option>
-          <option value="B2">B2</option>
-          <option value="C">C</option>
-          <option value="D">D</option>
-          <option value="E">E</option>
+          <option :value="6">A1</option>
+          <option :value="7">A2</option>
+          <option :value="4">B1</option>
+          <option :value="5">B2</option>
+          <option :value="3">C</option>
+          <option :value="2">D</option>
+          <option :value="1">E</option>
         </select>
+        <button @click="create_excel">Crea excel</button>
       </div>
     </div>
     <div class="groups-section">
@@ -60,7 +84,7 @@ export default {
 <style scoped>
 .page-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding-bottom: 2rem;
 }
@@ -194,6 +218,34 @@ export default {
   .page-header h1 {
     font-size: 2.2rem;
   }
+}
+
+button {
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+button:hover {
+  background: linear-gradient(135deg, #66b6ff 0%, #00c4cc 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
 }
 
 @media (max-width: 480px) {

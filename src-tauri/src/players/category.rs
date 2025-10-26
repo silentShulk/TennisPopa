@@ -44,6 +44,10 @@ impl Category {
         use Category::*;
         [Sconosciuta, E, D, C, B1, B2, A1, A2]
     }
+    pub fn all_categories_for_excel() -> [Category; 7] {
+        use Category::*;
+        [E, D, C, B1, B2, A1, A2]
+    }
 
     pub fn to_string(&self) -> String {
         match self {

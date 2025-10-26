@@ -4,6 +4,7 @@ mod players;
 use forms::create_forms::create_form;
 use forms::forms_info::*;
 use forms::get_forms_responses::main_get_forms_responses;
+use crate::players::group::*;
 use crate::players::player::*;
 
 
@@ -19,7 +20,10 @@ pub fn run() {
                                                 get_availability_form_type,
                                                 find_player,
                                                 update_spec_player,
-                                                create_group])
+                                                create_groups,
+                                                save_availability_court,
+                                                groups_in_category,
+                                                create_excel_group])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

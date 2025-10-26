@@ -4,6 +4,7 @@ import Page1 from '../pages/Groups.vue'
 import Page2 from '../pages/Player.vue'
 import Page3 from '../pages/GetFormResponsesPage.vue'
 import Page4 from '../pages/Schedule.vue'
+import Page5 from '../pages/Matches.vue'
 
 const routes = [
   {
@@ -30,6 +31,11 @@ const routes = [
     path: '/Schedule',
     name: 'Schedule',
     component: Page4
+  },
+  {
+    path: '/Matches',
+    name: 'Matches',
+    component: Page5
   }
 ]
 

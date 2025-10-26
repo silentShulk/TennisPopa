@@ -15,10 +15,6 @@ async function runBackendCommand(commandName, commandArgs = {}) {
     } 
 }
 
-async function Aiiii() {
-  await runBackendCommand('create_group');
-}
-
 async function handleRegistrationResponsesClick() {
     try {
         const formType = await runBackendCommand('get_registration_form_type');
@@ -76,10 +72,6 @@ export default {
           </div>
           <div v-else class="placeholder">Clicca per ottenere le risposte</div>
         </div>
-      </div>
-      <div>
-        <button @click="Aiiii"> SKIBIDI RIZZ
-        </button>
       </div>
       <div class="form-card">
         <h2 class="card-title">Risposte Disponibilità</h2>

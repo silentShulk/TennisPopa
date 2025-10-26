@@ -1,6 +1,3 @@
-import Group from '@/components/group.vue'; 
-
-
 <template>
   <div id="app">
     <div class="sidebar">
@@ -42,6 +39,13 @@ import Group from '@/components/group.vue';
           :class="{ active: $route.path === '/Schedule' }"
         >
           Orari Campi
+        </router-link>
+        <router-link 
+          to="/Matches" 
+          class="nav-link"
+          :class="{ active: $route.path === '/Matches' }"
+        >
+          Partite
         </router-link>
       </nav>
     </div>

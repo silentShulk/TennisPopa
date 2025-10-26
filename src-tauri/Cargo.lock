@@ -3866,12 +3866,12 @@ dependencies = [
 
 [[package]]
 name = "serde_rusqlite"
-version = "0.40.0"
+version = "0.40.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32d9325839c0a5dc4820323190bff9bba33f57362cb5591fa30db66cb56874b2"
+checksum = "ec8bd74f47e124e760475a7e863b5820dcef09cae50782d03d65961f5ca1e6d9"
 dependencies = [
  "rusqlite",
- "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -4586,6 +4586,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_repr",
+ "serde_rusqlite",
  "strsim",
  "tauri",
  "tauri-build",

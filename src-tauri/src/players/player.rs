@@ -46,7 +46,6 @@ pub fn find_player(name: String) -> Vec<Player>{
 
 #[tauri::command]
 pub fn update_spec_player(update_player: Player){
-    println!("{:?}", update_player);
 
     let players_conn = Connection::open("databases/players.db").unwrap();
     
@@ -62,12 +61,11 @@ pub fn update_spec_player(update_player: Player){
                 size = excluded.size,
                 id_group = excluded.id_group;",
         params![update_player.name, update_player.email, update_player.phone_number, update_player.category, update_player.date_of_creation, update_player.availability, update_player.size, update_player.id_group],
-    ).unwrap();
-    
+    ).unwrap();   
 }
 
 #[tauri::command]
-pub fn create_group() { 
+pub fn create_groups() { 
     let conn = Connection::open("databases/players.db").unwrap();
     let players = conn.get_from_table_struct::<Player>().unwrap();
 
@@ -80,11 +78,38 @@ pub fn create_group() {
                 .push(p.clone())
     );    
 
-    const PLAYERS_IN_GROUP: i32 = 4;
-    for (category, players) in players_by_category.iter_mut() {
-        println!("Category {:?}", category);
-        for i in 0..players.len() {
-            players[i].id_group = Some(i as i32/PLAYERS_IN_GROUP);
+    const MAX_PLAYERS_IN_GROUP: i32 = 4;
+
+    let mut player_group_id = 1;
+    for (category, players_in_category) in players_by_category.iter_mut() {
+        let mut players_in_group = 1;
+        for p in players_in_category {
+            // Create new group, overwrite if it already exist.
+            if players_in_group == 1 {
+                conn.execute(
+                    "INSERT INTO PlayerGroup (id, category)
+                        VALUES (?1, ?2)
+                        ON CONFLICT(id) DO UPDATE SET
+                            category = excluded.category",
+                            params![player_group_id, category]
+                ).unwrap();
+            }
+
+            // Set current player's group id.
+            p.id_group = Some(player_group_id);
+
+            // Go to next group id if group is full.
+            if players_in_group == MAX_PLAYERS_IN_GROUP {
+                players_in_group = 1;
+                player_group_id += 1;
+            } else {
+                players_in_group += 1;
+            }
+        }
+
+        // Go to next group only if this group wasn't filled, to avoid different categories in same group.
+        if players_in_group != 1 {
+            player_group_id += 1;
         }
     }
 
@@ -93,5 +118,56 @@ pub fn create_group() {
         players.iter().for_each(|p| players_edited.push(p.clone()));
     });
 
-    //conn.insert_into_table_struct(&players_edited);
+    for p in players_edited {
+        conn.execute(
+                "UPDATE Player
+                 SET id_group = ?1
+                 WHERE id  = ?2",
+            params![p.id_group, p.id.unwrap()],
+        ).unwrap();
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, RusqliteStruct)]
+struct Courts {
+    id: Option<i32>,
+    c1_sat: u32,
+    c1_sun: u32,
+    c2_sat: u32,
+    c2_sun: u32,
+    c3_sat: u32,
+    c3_sun: u32,
+    c4_sat: u32,
+    c4_sun: u32,
+    c6_sat: u32,
+    c6_sun: u32,    
+    cg1_sat: u32,
+    cg1_sun: u32,
+    cg2_sat: u32,
+    cg2_sun: u32,
+}
+
+#[tauri::command]
+pub fn save_availability_court(c1: (u32, u32), c2: (u32, u32), c3: (u32, u32), c4: (u32, u32), c6: (u32, u32), cg1: (u32, u32), cg2: (u32, u32)) {
+    let courts = Courts {
+        id: None,
+        c1_sat: c1.0,
+        c1_sun: c1.1,
+        c2_sat: c2.0,
+        c2_sun: c2.1,
+        c3_sat: c3.0,
+        c3_sun: c3.1,
+        c4_sat: c4.0,
+        c4_sun: c4.1,
+        c6_sat: c6.0,
+        c6_sun: c6.1,
+        cg1_sat: cg1.0,
+        cg1_sun: cg1.1,
+        cg2_sat: cg2.0,
+        cg2_sun: cg2.1,
+    };
+
+    let conn = Connection::open("databases/courts.db").expect("Couldn't open database at \"databases/courts.db\".");
+    conn.insert_into_table_struct::<Courts>(&courts).expect("Couldn't insert Courts inside of DB.");
 }

@@ -1,8 +1,21 @@
 <script setup>
-import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { ref, watch } from 'vue'
 
-const curtsSchedule = [
+const day = ref('')
+const curtsSchedule = ref([])
+
+const saturdayCurtsSchedule = [
+  { value: 1, label: '13:00' },
+  { value: 2, label: '14:00' },
+  { value: 4, label: '15:00' },
+  { value: 8, label: '16:00' },
+  { value: 16, label: '17:00' },
+  { value: 32, label: '18:00' },
+  { value: 64, label: '19:00' }
+]
+
+const sundayCurtsSchedule = [
   { value: 1, label: '8:00' },
   { value: 2, label: '9:00' },
   { value: 4, label: '10:00' },
@@ -25,11 +38,111 @@ const selectCourt6Schedule = ref([])
 const selectCourtG1Schedule = ref([])
 const selectCourtG2Schedule = ref([])
 
-</script>
+// Variabili per ogni campo, contenenti una tupla [saturdaySum, sundaySum]
+const court1Selections = ref([0, 0]) // [Sabato, Domenica]
+const court2Selections = ref([0, 0])
+const court3Selections = ref([0, 0])
+const court4Selections = ref([0, 0])
+const court6Selections = ref([0, 0])
+const courtG1Selections = ref([0, 0])
+const courtG2Selections = ref([0, 0])
 
-<script>
-export default {
-  name: 'Schedule'
+// Temporanei per salvare le selezioni di ogni giorno
+const saturdaySelections = ref({
+  court1: [], court2: [], court3: [], court4: [], court6: [], courtG1: [], courtG2: []
+})
+const sundaySelections = ref({
+  court1: [], court2: [], court3: [], court4: [], court6: [], courtG1: [], courtG2: []
+})
+
+// Funzione helper per calcolare la somma dei valori
+const sumValues = (array) => {
+  return array.reduce((sum, value) => sum + value, 0)
+}
+
+// Funzione per aggiornare il programma in base al giorno selezionato
+const selectDay = () => {
+  curtsSchedule.value = day.value === '0' ? saturdayCurtsSchedule : sundayCurtsSchedule
+  // Carica le selezioni salvate per il giorno selezionato
+  const selections = day.value === '0' ? saturdaySelections.value : sundaySelections.value
+  selectCourt1Schedule.value = [...selections.court1]
+  selectCourt2Schedule.value = [...selections.court2]
+  selectCourt3Schedule.value = [...selections.court3]
+  selectCourt4Schedule.value = [...selections.court4]
+  selectCourt6Schedule.value = [...selections.court6]
+  selectCourtG1Schedule.value = [...selections.courtG1]
+  selectCourtG2Schedule.value = [...selections.courtG2]
+}
+
+// Salva le selezioni quando cambiano
+const saveSelections = () => {
+  const target = day.value === '0' ? saturdaySelections.value : sundaySelections.value
+  target.court1 = [...selectCourt1Schedule.value]
+  target.court2 = [...selectCourt2Schedule.value]
+  target.court3 = [...selectCourt3Schedule.value]
+  target.court4 = [...selectCourt4Schedule.value]
+  target.court6 = [...selectCourt6Schedule.value]
+  target.courtG1 = [...selectCourtG1Schedule.value]
+  target.courtG2 = [...selectCourtG2Schedule.value]
+
+  // Aggiorna le tuple con le somme
+  court1Selections.value = [
+    sumValues(saturdaySelections.value.court1),
+    sumValues(sundaySelections.value.court1)
+  ]
+  court2Selections.value = [
+    sumValues(saturdaySelections.value.court2),
+    sumValues(sundaySelections.value.court2)
+  ]
+  court3Selections.value = [
+    sumValues(saturdaySelections.value.court3),
+    sumValues(sundaySelections.value.court3)
+  ]
+  court4Selections.value = [
+    sumValues(saturdaySelections.value.court4),
+    sumValues(sundaySelections.value.court4)
+  ]
+  court6Selections.value = [
+    sumValues(saturdaySelections.value.court6),
+    sumValues(sundaySelections.value.court6)
+  ]
+  courtG1Selections.value = [
+    sumValues(saturdaySelections.value.courtG1),
+    sumValues(sundaySelections.value.courtG1)
+  ]
+  courtG2Selections.value = [
+    sumValues(saturdaySelections.value.courtG2),
+    sumValues(sundaySelections.value.courtG2)
+  ]
+}
+
+// Funzione per ottenere tutte le selezioni come oggetto di tuple
+const getAllSelections = () => {
+  return {
+    court1: court1Selections.value,
+    court2: court2Selections.value,
+    court3: court3Selections.value,
+    court4: court4Selections.value,
+    court6: court6Selections.value,
+    courtG1: courtG1Selections.value,
+    courtG2: courtG2Selections.value
+  }
+}
+
+// Watch per salvare automaticamente le selezioni quando cambiano
+watch([
+  selectCourt1Schedule, selectCourt2Schedule, selectCourt3Schedule,
+  selectCourt4Schedule, selectCourt6Schedule, selectCourtG1Schedule,
+  selectCourtG2Schedule
+], () => {
+  if (day.value !== '') {
+    saveSelections()
+  }
+})
+
+// Mostra le selezioni con un alert
+const showSelections = () => {
+  invoke('save_availability_court' , { c1: court1Selections.value, c2: court2Selections.value, c3: court3Selections.value, c4: court4Selections.value, c6: court6Selections.value, cg1: courtG1Selections.value, cg2: courtG2Selections.value})
 }
 </script>
 
@@ -38,105 +151,137 @@ export default {
     <div class="page-header">
       <h1>Orari Campi</h1>
     </div>
-  <div>
-    <h1>Campo 1:</h1>
-    <div class="courtsSchedule"> 
-      <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
-        <input 
-                  type="checkbox" 
-                  :value="option.value" 
-                  v-model="selectCourt1Schedule" 
-                  class="checkbox-input"
-                />
-                <span class="checkbox-text">{{ option.label }}</span>
-      </label>
+
+    <div class="category-card">
+      <select
+        id="categoriaComboBox"
+        class="category-select"
+        v-model="day"
+        @change="selectDay"
+      >
+        <option value="" disabled>Seleziona un giorno</option>
+        <option value="0">Sabato</option>
+        <option value="1">Domenica</option>
+      </select>
+      <div v-if="curtsSchedule.length > 0">
+        <button class="btn btn-primary" @click="showSelections">Salva orari</button>
+      </div>
+      
     </div>
-  </div>
-  <div>
-    <h1>Campo 2:</h1>
-    <div class="courtsSchedule"> 
-      <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
-        <input 
-                  type="checkbox" 
-                  :value="option.value" 
-                  v-model="selectCourt2Schedule" 
-                  class="checkbox-input"
-                />
-                <span class="checkbox-text">{{ option.label }}</span>
-      </label>
+
+    <div v-if="curtsSchedule.length > 0">
+      <!-- Campo 1 -->
+      <div>
+        <h1>Campo 1:</h1>
+        <div class="courtsSchedule">
+          <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
+            <input
+              type="checkbox"
+              :value="option.value"
+              v-model="selectCourt1Schedule"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Campo 2 -->
+      <div>
+        <h1>Campo 2:</h1>
+        <div class="courtsSchedule">
+          <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
+            <input
+              type="checkbox"
+              :value="option.value"
+              v-model="selectCourt2Schedule"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Campo 3 -->
+      <div>
+        <h1>Campo 3:</h1>
+        <div class="courtsSchedule">
+          <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
+            <input
+              type="checkbox"
+              :value="option.value"
+              v-model="selectCourt3Schedule"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Campo 4 -->
+      <div>
+        <h1>Campo 4:</h1>
+        <div class="courtsSchedule">
+          <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
+            <input
+              type="checkbox"
+              :value="option.value"
+              v-model="selectCourt4Schedule"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Campo 6 -->
+      <div>
+        <h1>Campo 6:</h1>
+        <div class="courtsSchedule">
+          <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
+            <input
+              type="checkbox"
+              :value="option.value"
+              v-model="selectCourt6Schedule"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Campo G1 -->
+      <div>
+        <h1>Campo G1:</h1>
+        <div class="courtsSchedule">
+          <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
+            <input
+              type="checkbox"
+              :value="option.value"
+              v-model="selectCourtG1Schedule"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Campo G2 -->
+      <div>
+        <h1>Campo G2:</h1>
+        <div class="courtsSchedule">
+          <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
+            <input
+              type="checkbox"
+              :value="option.value"
+              v-model="selectCourtG2Schedule"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
     </div>
-  </div>
-  <div>
-    <h1>Campo 3:</h1>
-    <div class="courtsSchedule"> 
-      <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
-        <input 
-                  type="checkbox" 
-                  :value="option.value" 
-                  v-model="selectCourt3Schedule" 
-                  class="checkbox-input"
-                />
-                <span class="checkbox-text">{{ option.label }}</span>
-      </label>
-    </div>
-  </div>
-  <div>
-    <h1>Campo 4:</h1>
-    <div class="courtsSchedule"> 
-      <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
-        <input 
-                  type="checkbox" 
-                  :value="option.value" 
-                  v-model="selectCourt4Schedule" 
-                  class="checkbox-input"
-                />
-                <span class="checkbox-text">{{ option.label }}</span>
-      </label>
-    </div>
-  </div>
-  <div>
-    <h1>Campo 6:</h1>
-    <div class="courtsSchedule"> 
-      <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
-        <input 
-                  type="checkbox" 
-                  :value="option.value" 
-                  v-model="selectCourt4Schedule" 
-                  class="checkbox-input"
-                />
-                <span class="checkbox-text">{{ option.label }}</span>
-      </label>
-    </div>
-  </div>
-  <div>
-    <h1>Campo G1:</h1>
-    <div class="courtsSchedule"> 
-      <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
-        <input 
-                  type="checkbox" 
-                  :value="option.value" 
-                  v-model="selectCourt4Schedule" 
-                  class="checkbox-input"
-                />
-                <span class="checkbox-text">{{ option.label }}</span>
-      </label>
-    </div>
-  </div>
-  <div>
-    <h1>Campo G2:</h1>
-    <div class="courtsSchedule"> 
-      <label v-for="option in curtsSchedule" :key="option.value" class="checkbox-label">
-        <input 
-                  type="checkbox" 
-                  :value="option.value" 
-                  v-model="selectCourt4Schedule" 
-                  class="checkbox-input"
-                />
-                <span class="checkbox-text">{{ option.label }}</span>
-      </label>
-    </div>
-  </div>
-    
   </div>
 </template>
 
@@ -144,13 +289,19 @@ export default {
 .page-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+  display: flex;
+  flex-direction: column;
 }
 
 .page-header {
   background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
+  padding: 40px 20px;
   text-align: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .page-header h1 {
@@ -163,76 +314,22 @@ export default {
   padding: 40px;
 }
 
-.content-card {
-  background: white;
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 15px;
-  margin: 25px 0;
-  flex-wrap: wrap;
-}
-
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.btn-primary {
-  background: #3498db;
-  color: white;
-}
-
-.btn-secondary {
-  background: #95a5a6;
-  color: white;
-}
-
-.btn-success {
-  background: #27ae60;
-  color: white;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.stat-card {
-  background: #f8f9fa;
-  padding: 25px;
-  border-radius: 8px;
+.category-card {
+  margin: 10px;
   text-align: center;
-  border-top: 4px solid #e74c3c;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
 }
 
-.stat-card h3 {
-  color: #7f8c8d;
-  margin-bottom: 10px;
+.category-select {
+  padding: 10px;
   font-size: 1rem;
-}
-
-.stat-number {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #2c3e50;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
 }
 
 .courtsSchedule {
@@ -258,7 +355,6 @@ export default {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
   transition: all 0.2s ease;
-  justify-content: flex-start;
   background: white;
 }
 
@@ -285,7 +381,6 @@ export default {
   line-height: 1.2;
 }
 
-/* Stile per i titoli dei campi */
 h1 {
   color: #2c3e50;
   font-size: 1.5rem;
@@ -293,9 +388,31 @@ h1 {
   padding-left: 10px;
 }
 
-/* Aggiungi un po' di padding al container principale */
 .page-container > div {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   padding: 0 20px;
+}
+
+.page-container > div:last-child {
+  margin-bottom: 0;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #ffc107;
+  color: black;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>
