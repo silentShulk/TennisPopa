@@ -5,45 +5,111 @@
       @click="handleClick"
       :class="{ disabled: isVisible || anyModalOpen }"
     >
-      <!-- Row 1 -->
-      <p class="name">Nome 1</p>
-      <div class="cell filled"></div>
-      <div class="cell"></div>
-      <div class="cell"></div>
-      <div class="cell"></div>
-      <!-- Row 2 -->
-      <p class="name">Nome 2</p>
-      <div class="cell"></div>
-      <div class="cell filled"></div>
-      <div class="cell"></div>
-      <div class="cell"></div>
-      <!-- Row 3 -->
-      <p class="name">Nome 3</p>
-      <div class="cell"></div>
-      <div class="cell"></div>
-      <div class="cell filled"></div>
-      <div class="cell"></div>
-      <!-- Row 4 -->
-      <p class="name">Nome 4</p>
-      <div class="cell"></div>
-      <div class="cell"></div>
-      <div class="cell"></div>
-      <div class="cell filled"></div>
-    </div>
-    <!-- Modal -->
-    <div v-if="isVisible" class="modal" @click="handleModalClick">
-      <div class="modal-content">
-        <h3>Inserisci i punteggi</h3>
-        <label for="score1">Punteggio giocatore 1</label>
-        <input id="score1" type="number" v-model="score1" min="0" max="7" />
-        <label for="score2">Punteggio giocatore 2</label>
-        <input id="score2" type="number" v-model="score2" min="0" max="7" />
-        <div class="modal-buttons">
-          <button class="confirm" @click.stop="submitScores">OK</button>
-          <button class="cancel" @click.stop="closeModal">Annulla</button>
-        </div>
+      <!-- Row 0 (Player 1) -->
+      <p class="name">{{ players[0]?.name || 'Nome 1' }}</p>
+      <div class="cell" :class="{ filled: gridScores[0][0] !== '' || 0 === 0 }" data-row="0" data-col="0">
+        <span>{{ gridScores[0][0] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[0][1] !== '' }" data-row="0" data-col="1">
+        <span>{{ gridScores[0][1] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[0][2] !== '' }" data-row="0" data-col="2">
+        <span>{{ gridScores[0][2] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[0][3] !== '' }" data-row="0" data-col="3">
+        <span>{{ gridScores[0][3] }}</span>
+      </div>
+      <!-- Row 1 (Player 2) -->
+      <p class="name">{{ players[1]?.name || 'Nome 2' }}</p>
+      <div class="cell" :class="{ filled: gridScores[1][0] !== '' }" data-row="1" data-col="0">
+        <span>{{ gridScores[1][0] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[1][1] !== '' || 1 === 1 }" data-row="1" data-col="1">
+        <span>{{ gridScores[1][1] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[1][2] !== '' }" data-row="1" data-col="2">
+        <span>{{ gridScores[1][2] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[1][3] !== '' }" data-row="1" data-col="3">
+        <span>{{ gridScores[1][3] }}</span>
+      </div>
+      <!-- Row 2 (Player 3) -->
+      <p class="name">{{ players[2]?.name || 'Nome 3' }}</p>
+      <div class="cell" :class="{ filled: gridScores[2][0] !== '' }" data-row="2" data-col="0">
+        <span>{{ gridScores[2][0] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[2][1] !== '' }" data-row="2" data-col="1">
+        <span>{{ gridScores[2][1] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[2][2] !== '' || 2 === 2 }" data-row="2" data-col="2">
+        <span>{{ gridScores[2][2] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[2][3] !== '' }" data-row="2" data-col="3">
+        <span>{{ gridScores[2][3] }}</span>
+      </div>
+      <!-- Row 3 (Player 4) -->
+      <p class="name">{{ players[3]?.name || 'Nome 4' }}</p>
+      <div class="cell" :class="{ filled: gridScores[3][0] !== '' }" data-row="3" data-col="0">
+        <span>{{ gridScores[3][0] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[3][1] !== '' }" data-row="3" data-col="1">
+        <span>{{ gridScores[3][1] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[3][2] !== '' }" data-row="3" data-col="2">
+        <span>{{ gridScores[3][2] }}</span>
+      </div>
+      <div class="cell" :class="{ filled: gridScores[3][3] !== '' || 3 === 3 }" data-row="3" data-col="3">
+        <span>{{ gridScores[3][3] }}</span>
       </div>
     </div>
+    <!-- Teleport modal to body for isolation -->
+    <Teleport to="body">
+      <div v-if="isVisible" class="modal">
+        <div class="modal-content">
+          <!-- Header with player names and togglable switch (does nothing) -->
+          <div class="match-header">
+            <span class="player-name">{{ selectedPlayer1?.name || 'Giocatore 1' }}</span>
+            <label class="toggle-switch">
+              <input type="checkbox" v-model="mainSwitch" />
+              <span class="switch-slider"></span>
+            </label>
+            <span class="player-name">{{ selectedPlayer2?.name || 'Giocatore 2' }}</span>
+          </div>
+          <h3>Inserisci i punteggi</h3>
+          <!-- Game 1 row (with clamp on input) -->
+          <div class="game-row">
+            <span class="game-label">Game 1:</span>
+            <div class="score-inputs">
+              <input type="number" v-model.number="game1ScoreA" min="0" max="7" @input="clampToSeven($event, 'game1ScoreA')" class="score-box" />
+              <span class="dash">-</span>
+              <input type="number" v-model.number="game1ScoreB" min="0" max="7" @input="clampToSeven($event, 'game1ScoreB')" class="score-box" />
+            </div>
+          </div>
+          <!-- Game 2 row (with clamp on input) -->
+          <div class="game-row">
+            <span class="game-label">Game 2:</span>
+            <div class="score-inputs">
+              <input type="number" v-model.number="game2ScoreA" min="0" max="7" @input="clampToSeven($event, 'game2ScoreA')" class="score-box" />
+              <span class="dash">-</span>
+              <input type="number" v-model.number="game2ScoreB" min="0" max="7" @input="clampToSeven($event, 'game2ScoreB')" class="score-box" />
+            </div>
+          </div>
+          <!-- Tie row (no max, no clamp) -->
+          <div class="game-row">
+            <span class="game-label">Tie:</span>
+            <div class="score-inputs">
+              <input type="number" v-model.number="tieScoreA" min="0" class="score-box" />
+              <span class="dash">-</span>
+              <input type="number" v-model.number="tieScoreB" min="0" class="score-box" />
+            </div>
+          </div>
+          <div class="modal-buttons">
+            <button class="confirm" @click.stop="submitScores">OK</button>
+            <button class="cancel" @click.stop="closeModal">Annulla</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -51,6 +117,10 @@
 export default {
   name: 'Group',
   props: {
+    players: {
+      type: Array,
+      default: () => []
+    },
     anyModalOpen: {
       type: Boolean,
       default: false
@@ -59,33 +129,82 @@ export default {
   data() {
     return {
       isVisible: false,
-      score1: '',
-      score2: ''
+      selectedPlayer1: null,
+      selectedPlayer2: null,
+      gridScores: Array(4).fill().map(() => Array(4).fill('')),
+      selectedRow: -1,
+      selectedCol: -1,
+      game1ScoreA: 0,
+      game1ScoreB: 0,
+      game2ScoreA: 0,
+      game2ScoreB: 0,
+      tieScoreA: 0,
+      tieScoreB: 0,
+      mainSwitch: false
     };
   },
   methods: {
+    // Clamp method for Game1/Game2 inputs (called via @input)
+    clampToSeven(event, property) {
+      const value = parseInt(event.target.value) || 0;
+      const clamped = Math.min(value, 7);
+      this[property] = clamped;
+      event.target.value = clamped; // Reflect in UI immediately
+    },
     handleClick(event) {
-      // Ignore clicks if modal is open or any modal is open
       if (this.isVisible || this.anyModalOpen) return;
-      // Only open modal if a non-filled cell was clicked
       if (event.target.classList.contains('cell') && !event.target.classList.contains('filled')) {
+        const row = parseInt(event.target.dataset.row);
+        const col = parseInt(event.target.dataset.col);
+        if (this.gridScores[row][col] !== '') return;
+        this.selectedRow = row;
+        this.selectedCol = col;
+        this.selectedPlayer1 = this.players[row];
+        this.selectedPlayer2 = this.players[col];
+        // Reset all fields on open
+        this.game1ScoreA = 0;
+        this.game1ScoreB = 0;
+        this.game2ScoreA = 0;
+        this.game2ScoreB = 0;
+        this.tieScoreA = 0;
+        this.tieScoreB = 0;
+        this.mainSwitch = false;
         this.isVisible = true;
         this.$emit('modal-opened');
-      }
-    },
-    handleModalClick(event) {
-      if (event.target.classList.contains('modal')) {
-        this.closeModal();
       }
     },
     closeModal() {
       this.$emit('modal-closed');
       this.isVisible = false;
-      this.score1 = '';
-      this.score2 = '';
+      this.selectedPlayer1 = null;
+      this.selectedPlayer2 = null;
+      this.selectedRow = -1;
+      this.selectedCol = -1;
+      // Reset all fields
+      this.game1ScoreA = 0;
+      this.game1ScoreB = 0;
+      this.game2ScoreA = 0;
+      this.game2ScoreB = 0;
+      this.tieScoreA = 0;
+      this.tieScoreB = 0;
+      this.mainSwitch = false;
     },
     submitScores() {
-      console.log('Score 1:', this.score1, 'Score 2:', this.score2);
+      if (this.selectedRow !== -1 && this.selectedCol !== -1) {
+        // Multi-line string with explicit 0 display (two spaces around dash)
+        const game1Line = `${this.game1ScoreA}  -  ${this.game1ScoreB}`;
+        const game2Line = `${this.game2ScoreA}  -  ${this.game2ScoreB}`;
+        const tieLine = `${this.tieScoreA}  -  ${this.tieScoreB}`;
+        this.gridScores[this.selectedRow][this.selectedCol] = `${game1Line}\n${game2Line}\n${tieLine}`;
+      }
+      // Log all data
+      console.log({
+        match: `${this.selectedPlayer1?.name} vs ${this.selectedPlayer2?.name}`,
+        game1: { scoreA: this.game1ScoreA, scoreB: this.game1ScoreB },
+        game2: { scoreA: this.game2ScoreA, scoreB: this.game2ScoreB },
+        tie: { scoreA: this.tieScoreA, scoreB: this.tieScoreB },
+        mainSwitch: this.mainSwitch
+      });
       this.closeModal();
     }
   }
@@ -139,31 +258,37 @@ export default {
   background-color: white;
   cursor: pointer;
   transition: background-color 0.25s ease, transform 0.15s ease;
+  font-size: 0.7rem;
+  line-height: 1.1;
 }
 
-.cell:hover {
+.cell:hover:not(.filled) {
   background-color: rgba(79, 172, 254, 0.15);
   transform: scale(1.05);
 }
 
+.cell span {
+  font-weight: bold;
+  color: #2c3e50;
+  white-space: pre-line;
+  text-align: center;
+}
+
+/* UPDATED: Restore color for non-clickable cells (filled + diagonals) */
 .filled {
   background: linear-gradient(135deg, #4facfe, #00f2fe);
   border: none;
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
   cursor: default;
-  /* Non-clickable */
   pointer-events: none;
-  /* Disable clicking */
 }
 
-/* Disable group interaction when modal is open */
 .disabled {
   pointer-events: none;
   opacity: 0.5;
   filter: blur(1px);
 }
 
-/* ===== Modal Styles ===== */
 .modal {
   position: fixed;
   top: 0;
@@ -183,39 +308,128 @@ export default {
   border-radius: 16px;
   padding: 2rem;
   width: 300px;
+  max-width: 90%;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   text-align: center;
+  filter: none !important;
+  -webkit-filter: none !important;
+  isolation: isolate;
+  transform: translateZ(0);
+  will-change: transform;
+  z-index: 1001;
+}
+
+.match-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(79, 172, 254, 0.1);
+  border-radius: 8px;
+}
+
+.player-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .switch-slider {
+  background-color: #4facfe;
+}
+
+input:checked + .switch-slider:before {
+  transform: translateX(26px);
+}
+
+.game-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+.game-label {
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 60px;
+}
+
+.score-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.score-box {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0;
+  transition: border-color 0.3s ease;
+}
+
+.score-box:focus {
+  border-color: #4facfe;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+}
+
+.dash {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 1.2rem;
 }
 
 .modal-content h3 {
   color: #2c3e50;
-  margin-bottom: 1rem;
+  margin: 1rem 0 0.5rem 0;
   font-weight: 600;
-}
-
-.modal-content label {
-  display: block;
-  margin-top: 10px;
-  color: #34495e;
-  font-weight: 600;
-  text-align: left;
-  font-size: 0.9rem;
-}
-
-.modal-content input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 4px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.modal-content input:focus {
-  border-color: #4facfe;
-  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.15);
 }
 
 .modal-buttons {
@@ -248,7 +462,6 @@ export default {
   transform: scale(1.05);
 }
 
-/* ===== Responsive ===== */
 @media (max-width: 600px) {
   .group {
     grid-template-columns: 100px repeat(4, 45px);
@@ -258,6 +471,21 @@ export default {
   .modal-content {
     width: 90%;
     padding: 1.5rem;
+  }
+
+  .game-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .score-inputs {
+    justify-content: center;
+  }
+
+  .match-header {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
 </style>

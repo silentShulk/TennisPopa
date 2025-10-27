@@ -16,7 +16,7 @@ CREATE TABLE Player (
     size INTEGER NOT NULL,
 
     id_group INTEGER,
-    FOREIGN KEY (id_group) REFERENCES PlayerGroup(id)
+    FOREIGN KEY (id_group) REFERENCES PlayerGroup(id) ON DELETE SET NULL
 );
 
 CREATE TABLE PlayerMatch (

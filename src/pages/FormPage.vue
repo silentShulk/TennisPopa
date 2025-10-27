@@ -17,7 +17,7 @@ async function runBackendCommand(commandName, commandArgs = {}) {
     } catch (error) {
         throw error;
     } 
-}
+} 
 
 async function handleRegistrationClick() {
     try {

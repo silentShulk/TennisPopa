@@ -66,6 +66,9 @@ pub fn update_spec_player(update_player: Player){
 
 #[tauri::command]
 pub fn create_groups() { 
+
+    println!("AAAAAAAAAAAAAAAA");
+
     let conn = Connection::open("databases/players.db").unwrap();
     let players = conn.get_from_table_struct::<Player>().unwrap();
 
@@ -80,12 +83,15 @@ pub fn create_groups() {
 
     const MAX_PLAYERS_IN_GROUP: i32 = 4;
 
-    let mut player_group_id = 1;
+    conn.execute("DELETE FROM PlayerGroup;", []).expect("Couldn't clear PlayerGroup");
+
+    let mut player_group_id = 0;
     for (category, players_in_category) in players_by_category.iter_mut() {
         let mut players_in_group = 1;
         for p in players_in_category {
             // Create new group, overwrite if it already exist.
             if players_in_group == 1 {
+                player_group_id += 1;
                 conn.execute(
                     "INSERT INTO PlayerGroup (id, category)
                         VALUES (?1, ?2)
@@ -101,16 +107,13 @@ pub fn create_groups() {
             // Go to next group id if group is full.
             if players_in_group == MAX_PLAYERS_IN_GROUP {
                 players_in_group = 1;
-                player_group_id += 1;
             } else {
                 players_in_group += 1;
             }
         }
 
-        // Go to next group only if this group wasn't filled, to avoid different categories in same group.
-        if players_in_group != 1 {
-            player_group_id += 1;
-        }
+        // Go to next group.
+        player_group_id += 1;
     }
 
     let mut players_edited: Vec<Player> = vec![];
@@ -118,7 +121,12 @@ pub fn create_groups() {
         players.iter().for_each(|p| players_edited.push(p.clone()));
     });
 
+    println!("{}", players_edited.len());
+    let mut i = 0;
     for p in players_edited {
+
+        println!("{}", i);
+        i +=1;
         conn.execute(
                 "UPDATE Player
                  SET id_group = ?1
@@ -170,4 +178,10 @@ pub fn save_availability_court(c1: (u32, u32), c2: (u32, u32), c3: (u32, u32), c
 
     let conn = Connection::open("databases/courts.db").expect("Couldn't open database at \"databases/courts.db\".");
     conn.insert_into_table_struct::<Courts>(&courts).expect("Couldn't insert Courts inside of DB.");
+}
+
+
+#[tauri::command]
+pub fn salve_match_result(p1: Player, p2: Player, game1: (u32, u32), game2: (u32, u32), tie: (u32, u32)){
+    
 }

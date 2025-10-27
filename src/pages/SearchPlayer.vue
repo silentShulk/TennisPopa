@@ -273,14 +273,6 @@ const saveChanges = async () => {
     editedPlayer.value.availability = calculateAvailabilityValue()
     editedPlayer.value.email = selectedPlayer.value.email
     
-    alert(editedPlayer.value.name         + " " +
-          editedPlayer.value.category     + " " +
-          editedPlayer.value.availability + " " +
-          editedPlayer.value.size         + " " 
-    );
-
-    console.log('Dati da inviare:', editedPlayer.value)
-    
     await invoke('update_spec_player', { updatePlayer: editedPlayer.value })
 
     selectedPlayer.value = { ...editedPlayer.value }
@@ -289,7 +281,6 @@ const saveChanges = async () => {
     selectedAvailability.value = []
     
     console.log('Player aggiornato con successo')
-    alert('Modifiche salvate con successo!')
   } catch (error) {
     handleSaveError(error)
   }
@@ -297,7 +288,6 @@ const saveChanges = async () => {
   // DEBUG _______________________________________________
   const handleSaveError = (error) => {
   let errorMessage = 'Errore nel salvataggio delle modifiche'
-  alert("AAA")
   if (typeof error === 'string') {
     if (error.includes('missing required key')) {
       errorMessage = 'Errore di configurazione: parametri mancanti per aggiornare il player.'
@@ -321,7 +311,6 @@ const saveChanges = async () => {
   }
   
   console.error('Errore dettagliato nel salvataggio:', error)
-  alert(errorMessage)
 }
 }
 </script>

@@ -12,6 +12,7 @@ use crate::players::player::*;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![create_form,
                                                 get_registration_form,
                                                 get_availability_form,

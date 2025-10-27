@@ -12,9 +12,11 @@ pub struct Group {
     pub players:  Vec<Player>
 }
 
+//Non restiruisce bene le persone nei gironi e prende persone che sono in categorie diverse.
+//MEGA CACCONA DI DE PAOLA PROGRAMMA NON DETERMINISTICO, COME DICE GRECO FA INFINITAMENTE CAGARE 
 #[tauri::command]
 pub fn groups_in_category(category: Category) -> Vec<Group> {
-
+    
     let conn = Connection::open("databases/players.db").expect("Coudln't open \"databases/players.db\".");
     
     let mut stmt = conn.prepare(
@@ -22,30 +24,42 @@ pub fn groups_in_category(category: Category) -> Vec<Group> {
     ).unwrap();
     let rows = stmt.query([]).expect("Coudln't query from PlayerGroup TABLE.");
 
+    
+
     // Collect all player groups.
     let all_player_groups = from_rows::<(i32, Category)>(rows)
         .map(|r| r.map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e))))
         .collect::<rusqlite::Result<Vec<_>>>().expect("Couldn't extract PlayerGroups from query.");
-
+    
     let player_groups_ids_in_category: Vec<i32> = all_player_groups
         .iter()
         .filter(|pg| pg.1 == category)
         .map(|pg| pg.0)
         .collect();
 
+    for i in player_groups_ids_in_category.iter(){
+        println!("{}", i);
+    }
 
     let mut groups_in_category = vec![];
     let players = conn.get_from_table_struct::<Player>().expect("Couldn't query Player from DB.");
     for pg in player_groups_ids_in_category {
         // Filter players with id_group == pg
-        let players_in_group = players.iter().filter(|p| p.id_group.unwrap() == pg).cloned().collect();
+        //TODO Fare che i giocatori che hanno l'id group a none non vengono considerati (fare anche che quando ottieni i giocatori li assegna automaticamente ?)
+        let players_in_group = players.iter().filter(|p| {
+            if p.id_group.is_none() {
+                 println!("ID GROUP NONE: {:?}", p); return false;
+            }
+
+            p.id_group.unwrap() == pg
+        }).cloned().collect();
         groups_in_category.push(Group { category: category, players: players_in_group });
     }
 
-    for i in &groups_in_category{
-        println!("{:?}" , i.category);
-        for p in i.players.clone(){
-            println!("{:?} {:?} {:?}", p.name, p.category, p.email);
+    for g in groups_in_category.iter(){
+        println!("category: {:?}", g.category);
+        for p in g.players.iter(){
+            println!("\t{} {:?}", p.name, p.category);
         }
     }
 
@@ -53,7 +67,7 @@ pub fn groups_in_category(category: Category) -> Vec<Group> {
 }  
 
 #[tauri::command]
-pub fn create_excel_group(){
+pub fn create_excel_group(path: String){
     let mut files_excel = Workbook::new();
 
         let colors: [u32; 7] = [
@@ -203,5 +217,5 @@ pub fn create_excel_group(){
 
             k += 1;
         }
-        files_excel.save("excel_files/latest.xlsx").expect("Error to save the file");
+        files_excel.save(path).expect("Error to save the file");
 }

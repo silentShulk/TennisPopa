@@ -3,8 +3,11 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": ["main"],
+  "webviews": ["main"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "dialog:default",
+    "dialog:allow-save"
   ]
 }

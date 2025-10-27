@@ -1,15 +1,26 @@
 <script setup>
 import { invoke } from '@tauri-apps/api/core';
 import Group from '../components/Group.vue';
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { save } from '@tauri-apps/plugin-dialog';
 
+const route = useRoute();
 const category = ref('');
-const groups = ref([]); // Per memorizzare i gruppi
+const groups = ref([]);
 
+// Called on category change
 async function selectedCategory() {
+  if (!category.value) {
+    groups.value = [];
+    return;
+  }
+  
   try {
-    const result = await invoke('groups_in_category', { category: category.value });
+    const categoryInt = parseInt(category.value);
+    const result = await invoke('groups_in_category', { category: categoryInt });
     groups.value = Array.isArray(result) ? result : [];
+    console.log('Loaded groups:', groups.value);
   } catch (error) {
     alert('Errore durante la chiamata a groups_in_category: ' + error);
     console.error('Errore durante la chiamata a groups_in_category:', error);
@@ -17,23 +28,72 @@ async function selectedCategory() {
   }
 }
 
-function create_excel(){
-  invoke('create_excel_group', {})
+async function create_excel() {
+  try {
+    const filePath = await save({
+      filters: [{ name: 'File Excel', extensions: ['xlsx'] }],
+      defaultPath: 'gruppi_torneo.xlsx',
+    });
+    if (filePath) {
+      await invoke('create_excel_group', { path: filePath });
+      alert('File Excel creato con successo!');
+    } else {
+      console.log('Operazione annullata dall\'utente.');
+    }
+  } catch (error) {
+    alert('Errore durante la creazione del file Excel: ' + error);
+    console.error('Errore durante la creazione del file Excel:', error);
+  }
+}
+const anyModalOpen = ref(false);
+
+function onModalOpened() {
+  anyModalOpen.value = true;
 }
 
-</script>
-<script>
-export default {
-  name: 'Groups',
-  components: { Group },
-  data() {
-    return {
-      anyModalOpen: false
-    };
-  }
-};
-</script>
+function onModalClosed() {
+  anyModalOpen.value = false;
+}
 
+// Updated watcher: Keep blur class and scroll lock, but remove pointerEvents (teleport handles isolation)
+watch(anyModalOpen, (isOpen) => {
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) {
+    if (isOpen) {
+      mainContent.classList.add('modal-open');
+      // REMOVED: mainContent.style.pointerEvents = 'none'; // No longer needed with Teleport
+    } else {
+      mainContent.classList.remove('modal-open');
+      // REMOVED: mainContent.style.pointerEvents = ''; // No longer needed
+    }
+  }
+  
+  const body = document.body;
+  if (isOpen) {
+    body.style.overflow = 'hidden';
+  } else {
+    body.style.overflow = '';
+  }
+});
+
+// Watch for route changes to close modal early
+watch(() => route.path, (newPath) => {
+  if (newPath !== '/Groups' && anyModalOpen.value) {
+    anyModalOpen.value = false;
+  }
+});
+
+// Cleanup on unmount
+onUnmounted(() => {
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) {
+    mainContent.classList.remove('modal-open');
+    // REMOVED: mainContent.style.pointerEvents = ''; // No longer needed
+  }
+  document.body.style.overflow = '';
+  anyModalOpen.value = false;
+});
+</script>
 
 <template>
   <div class="page-container">
@@ -58,30 +118,39 @@ export default {
     </div>
     <div class="groups-section">
       <div class="groups-grid">
-        <div class="group-wrapper">
-          <Group :any-modal-open="anyModalOpen" @modal-opened="anyModalOpen = true" @modal-closed="anyModalOpen = false" />
+        <div v-for="(group, index) in groups" :key="index" class="group-wrapper">
+          <Group 
+            :players="group.players" 
+            :any-modal-open="anyModalOpen" 
+            @modal-opened="onModalOpened" 
+            @modal-closed="onModalClosed" 
+          />
         </div>
-        <div class="group-wrapper">
-          <Group :any-modal-open="anyModalOpen" @modal-opened="anyModalOpen = true" @modal-closed="anyModalOpen = false" />
-        </div>
-        <div class="group-wrapper">
-          <Group :any-modal-open="anyModalOpen" @modal-opened="anyModalOpen = true" @modal-closed="anyModalOpen = false" />
-        </div>
-        <div class="group-wrapper">
-          <Group :any-modal-open="anyModalOpen" @modal-opened="anyModalOpen = true" @modal-closed="anyModalOpen = false" />
-        </div>
-        <div class="group-wrapper">
-          <Group :any-modal-open="anyModalOpen" @modal-opened="anyModalOpen = true" @modal-closed="anyModalOpen = false" />
-        </div>
-        <div class="group-wrapper">
-          <Group :any-modal-open="anyModalOpen" @modal-opened="anyModalOpen = true" @modal-closed="anyModalOpen = false" />
+        <div v-if="category && groups.length === 0" class="no-groups-message">
+          Nessun girone disponibile per questa categoria.
         </div>
       </div>
     </div>
   </div>
 </template>
 
+<!-- Styles unchanged from previous version -->
 <style scoped>
+.no-groups-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  backdrop-filter: blur(5px);
+}
+
+:global(.main-content.modal-open) {
+  filter: blur(2px);
+}
+
 .page-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
@@ -196,7 +265,6 @@ export default {
   transform: translateY(-4px);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .category-section {
     padding: 1rem;
