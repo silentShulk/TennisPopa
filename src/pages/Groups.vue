@@ -1,13 +1,17 @@
 <script setup>
 import { invoke } from '@tauri-apps/api/core';
 import Group from '../components/Group.vue';
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { save } from '@tauri-apps/plugin-dialog';
 
 const route = useRoute();
 const category = ref('');
 const groups = ref([]);
+const anyModalOpen = ref(false);
+const swapMode = ref(false); // Stato della modalità swap
+const selectedPlayer1Id = ref(null); // ID del primo giocatore selezionato
+const selectedPlayer2Id = ref(null); // ID del secondo giocatore selezionato
 
 // Called on category change
 async function selectedCategory() {
@@ -15,12 +19,15 @@ async function selectedCategory() {
     groups.value = [];
     return;
   }
-  
   try {
     const categoryInt = parseInt(category.value);
     const result = await invoke('groups_in_category', { category: categoryInt });
     groups.value = Array.isArray(result) ? result : [];
     console.log('Loaded groups:', groups.value);
+    // Resetta la modalità swap e le selezioni quando cambia categoria
+    swapMode.value = false;
+    selectedPlayer1Id.value = null;
+    selectedPlayer2Id.value = null;
   } catch (error) {
     alert('Errore durante la chiamata a groups_in_category: ' + error);
     console.error('Errore durante la chiamata a groups_in_category:', error);
@@ -38,14 +45,13 @@ async function create_excel() {
       await invoke('create_excel_group', { path: filePath });
       alert('File Excel creato con successo!');
     } else {
-      console.log('Operazione annullata dall\'utente.');
+      console.log("Operazione annullata dall'utente.");
     }
   } catch (error) {
     alert('Errore durante la creazione del file Excel: ' + error);
     console.error('Errore durante la creazione del file Excel:', error);
   }
 }
-const anyModalOpen = ref(false);
 
 function onModalOpened() {
   anyModalOpen.value = true;
@@ -55,19 +61,31 @@ function onModalClosed() {
   anyModalOpen.value = false;
 }
 
-// Updated watcher: Keep blur class and scroll lock, but remove pointerEvents (teleport handles isolation)
+// Computed: only complete groups (≥ 4 players)
+const completeGroups = computed(() => {
+  return groups.value.filter(group => Array.isArray(group.players) && group.players.length >= 4);
+});
+
+// Computed: players from incomplete groups (< 4 players)
+const incompletePlayers = computed(() => {
+  return groups.value
+    .filter(group => Array.isArray(group.players) && group.players.length < 4)
+    .flatMap(group => group.players.map(p => ({
+      id: p.id ?? null,
+      name: p.name ?? p
+    }))); // Include ID e nome
+});
+
+// Watch modal state
 watch(anyModalOpen, (isOpen) => {
   const mainContent = document.querySelector('.main-content');
   if (mainContent) {
     if (isOpen) {
       mainContent.classList.add('modal-open');
-      // REMOVED: mainContent.style.pointerEvents = 'none'; // No longer needed with Teleport
     } else {
       mainContent.classList.remove('modal-open');
-      // REMOVED: mainContent.style.pointerEvents = ''; // No longer needed
     }
   }
-  
   const body = document.body;
   if (isOpen) {
     body.style.overflow = 'hidden';
@@ -83,16 +101,67 @@ watch(() => route.path, (newPath) => {
   }
 });
 
+// Watch per resettare swap mode al cambio categoria
+watch(category, () => {
+  swapMode.value = false;
+  selectedPlayer1Id.value = null;
+  selectedPlayer2Id.value = null;
+});
+
 // Cleanup on unmount
 onUnmounted(() => {
   const mainContent = document.querySelector('.main-content');
   if (mainContent) {
     mainContent.classList.remove('modal-open');
-    // REMOVED: mainContent.style.pointerEvents = ''; // No longer needed
   }
   document.body.style.overflow = '';
   anyModalOpen.value = false;
+  swapMode.value = false;
+  selectedPlayer1Id.value = null;
+  selectedPlayer2Id.value = null;
 });
+
+function create_groups() {
+  invoke('create_groups', {});
+}
+
+function toggleSwapMode() {
+  swapMode.value = !swapMode.value;
+  // Resetta selezioni quando si attiva/disattiva la modalità
+  selectedPlayer1Id.value = null;
+  selectedPlayer2Id.value = null;
+}
+
+async function handlePlayerSelection(player) {
+  if (!swapMode.value || anyModalOpen.value) return;
+
+  if (!selectedPlayer1Id.value) {
+    selectedPlayer1Id.value = player.id;
+    console.log('Primo giocatore selezionato:', player.name, player.id);
+  } else if (!selectedPlayer2Id.value && player.id !== selectedPlayer1Id.value) {
+    selectedPlayer2Id.value = player.id;
+    console.log('Secondo giocatore selezionato:', player.name, player.id);
+    // Esegui lo swap
+    try {
+      await invoke('swap_group_for_players', {
+        p1Id: selectedPlayer1Id.value,
+        p2Id: selectedPlayer2Id.value
+      });
+      alert('Giocatori swappati con successo!');
+      // Ricarica i gruppi per riflettere lo swap
+      await selectedCategory();
+    } catch (error) {
+      alert('Errore durante lo swap: ' + error);
+      console.error('Errore durante lo swap:', error);
+    } finally {
+      // Resetta la modalità swap e le selezioni
+      swapMode.value = false;
+      selectedPlayer1Id.value = null;
+      selectedPlayer2Id.value = null;
+    }
+  }
+}
+
 </script>
 
 <template>
@@ -100,6 +169,7 @@ onUnmounted(() => {
     <div class="page-header">
       <h1>Gironi Torneo</h1>
     </div>
+
     <div class="category-section">
       <div class="category-card">
         <label for="categoriaComboBox" class="category-label">Seleziona Categoria:</label>
@@ -114,27 +184,49 @@ onUnmounted(() => {
           <option :value="1">E</option>
         </select>
         <button @click="create_excel">Crea excel</button>
+        <button @click="create_groups">Crea gironi</button>
+        <button :class="{ 'swap-active': swapMode }" @click="toggleSwapMode">
+          {{ swapMode ? 'Disattiva Swap' : 'Attiva Swap' }}
+        </button>
       </div>
     </div>
+
     <div class="groups-section">
       <div class="groups-grid">
-        <div v-for="(group, index) in groups" :key="index" class="group-wrapper">
-          <Group 
-            :players="group.players" 
-            :any-modal-open="anyModalOpen" 
-            @modal-opened="onModalOpened" 
-            @modal-closed="onModalClosed" 
+        <div v-for="(group, index) in completeGroups" :key="index" class="group-wrapper">
+          <Group
+            :players="group.players"
+            :any-modal-open="anyModalOpen"
+            :swap-mode="swapMode"
+            @modal-opened="onModalOpened"
+            @modal-closed="onModalClosed"
+            @player-selected="handlePlayerSelection"
           />
         </div>
-        <div v-if="category && groups.length === 0" class="no-groups-message">
-          Nessun girone disponibile per questa categoria.
+        <div v-if="category && completeGroups.length === 0" class="no-groups-message">
+          Nessun girone completo disponibile per questa categoria.
         </div>
       </div>
+    </div>
+
+    <!-- Incomplete groups players list -->
+    <div v-if="incompletePlayers.length > 0" class="incomplete-section">
+      <h2>Giocatori senza gruppo completo</h2>
+      <ul>
+        <li
+          v-for="(player, index) in incompletePlayers"
+          :key="index"
+          :class="{ 'player-selected': player.id === selectedPlayer1Id || player.id === selectedPlayer2Id }"
+          @click="handlePlayerSelection(player)"
+          class="player-item"
+        >
+          {{ player.name }}
+        </li>
+      </ul>
     </div>
   </div>
 </template>
 
-<!-- Styles unchanged from previous version -->
 <style scoped>
 .no-groups-message {
   grid-column: 1 / -1;
@@ -265,6 +357,42 @@ onUnmounted(() => {
   transform: translateY(-4px);
 }
 
+/* New incomplete players list styling */
+.incomplete-section {
+  max-width: 800px;
+  margin: 2rem auto;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.incomplete-section h2 {
+  margin-bottom: 1rem;
+  text-align: center;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.incomplete-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.incomplete-section li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  text-align: center;
+  color: #34495e;
+  font-size: 1.05rem;
+}
+
+.incomplete-section li:last-child {
+  border-bottom: none;
+}
+
 @media (max-width: 768px) {
   .category-section {
     padding: 1rem;
@@ -314,6 +442,32 @@ button:active {
 button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
+}
+
+.swap-active {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+}
+
+.swap-active:hover {
+  background: linear-gradient(135deg, #ff8787, #ffa270);
+}
+
+/* Stile per i giocatori selezionati */
+.player-selected {
+  background: rgba(79, 172, 254, 0.3);
+  border-radius: 5px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+/* Stile per gli elementi della lista dei giocatori */
+.player-item {
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.player-item:hover {
+  background: rgba(79, 172, 254, 0.15);
 }
 
 @media (max-width: 480px) {

@@ -5,10 +5,6 @@ import { invoke } from '@tauri-apps/api/core';
 const registrationUrl = ref('');
 const availabilityUrl = ref('');
 
-function SKIBIDI(){
-  invoke ('create_groups', {});
-}
-
 // Calls the Rust backend command
 async function runBackendCommand(commandName, commandArgs = {}) {
     try {
@@ -61,7 +57,6 @@ export default {
       <h1>Creazione Form</h1>
       <p>Genera link personalizzati per i tuoi form in un clic</p>
     </div>
-    <button @click="SKIBIDI" >aaaaaaa</button>
     <div class="forms-container">
       <div class="form-card">
         <h2 class="card-title">Registrazione</h2>

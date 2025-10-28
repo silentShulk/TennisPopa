@@ -1,5 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { invoke } from '@tauri-apps/api/core';
+
+async function create_matches() {
+  await invoke('schedule_matches_for_all_players', {});
+}
+
 </script>
 
 <script>
@@ -13,6 +19,7 @@ export default {
     <div class="page-header">
       <h1>Partite</h1>
     </div>
+    <button @click="create_matches">Crea partite</button>
   </div>
 </template>
 

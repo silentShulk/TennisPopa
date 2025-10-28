@@ -6,7 +6,13 @@
       :class="{ disabled: isVisible || anyModalOpen }"
     >
       <!-- Row 0 (Player 1) -->
-      <p class="name">{{ players[0]?.name || 'Nome 1' }}</p>
+      <p
+        class="name"
+        :class="{ 'player-selected': players[0]?.id === $parent.selectedPlayer1Id || players[0]?.id === $parent.selectedPlayer2Id }"
+        @click.stop="handlePlayerClick(0)"
+      >
+        {{ players[0]?.name || 'Nome 1' }}
+      </p>
       <div class="cell" :class="{ filled: gridScores[0][0] !== '' || 0 === 0 }" data-row="0" data-col="0">
         <span>{{ gridScores[0][0] }}</span>
       </div>
@@ -20,7 +26,13 @@
         <span>{{ gridScores[0][3] }}</span>
       </div>
       <!-- Row 1 (Player 2) -->
-      <p class="name">{{ players[1]?.name || 'Nome 2' }}</p>
+      <p
+        class="name"
+        :class="{ 'player-selected': players[1]?.id === $parent.selectedPlayer1Id || players[1]?.id === $parent.selectedPlayer2Id }"
+        @click.stop="handlePlayerClick(1)"
+      >
+        {{ players[1]?.name || 'Nome 2' }}
+      </p>
       <div class="cell" :class="{ filled: gridScores[1][0] !== '' }" data-row="1" data-col="0">
         <span>{{ gridScores[1][0] }}</span>
       </div>
@@ -34,7 +46,13 @@
         <span>{{ gridScores[1][3] }}</span>
       </div>
       <!-- Row 2 (Player 3) -->
-      <p class="name">{{ players[2]?.name || 'Nome 3' }}</p>
+      <p
+        class="name"
+        :class="{ 'player-selected': players[2]?.id === $parent.selectedPlayer1Id || players[2]?.id === $parent.selectedPlayer2Id }"
+        @click.stop="handlePlayerClick(2)"
+      >
+        {{ players[2]?.name || 'Nome 3' }}
+      </p>
       <div class="cell" :class="{ filled: gridScores[2][0] !== '' }" data-row="2" data-col="0">
         <span>{{ gridScores[2][0] }}</span>
       </div>
@@ -48,7 +66,13 @@
         <span>{{ gridScores[2][3] }}</span>
       </div>
       <!-- Row 3 (Player 4) -->
-      <p class="name">{{ players[3]?.name || 'Nome 4' }}</p>
+      <p
+        class="name"
+        :class="{ 'player-selected': players[3]?.id === $parent.selectedPlayer1Id || players[3]?.id === $parent.selectedPlayer2Id }"
+        @click.stop="handlePlayerClick(3)"
+      >
+        {{ players[3]?.name || 'Nome 4' }}
+      </p>
       <div class="cell" :class="{ filled: gridScores[3][0] !== '' }" data-row="3" data-col="0">
         <span>{{ gridScores[3][0] }}</span>
       </div>
@@ -66,7 +90,6 @@
     <Teleport to="body">
       <div v-if="isVisible" class="modal">
         <div class="modal-content">
-          <!-- Header with player names and togglable switch (does nothing) -->
           <div class="match-header">
             <span class="player-name">{{ selectedPlayer1?.name || 'Giocatore 1' }}</span>
             <label class="toggle-switch">
@@ -76,7 +99,6 @@
             <span class="player-name">{{ selectedPlayer2?.name || 'Giocatore 2' }}</span>
           </div>
           <h3>Inserisci i punteggi</h3>
-          <!-- Game 1 row (with clamp on input) -->
           <div class="game-row">
             <span class="game-label">Game 1:</span>
             <div class="score-inputs">
@@ -85,7 +107,6 @@
               <input type="number" v-model.number="game1ScoreB" min="0" max="7" @input="clampToSeven($event, 'game1ScoreB')" class="score-box" />
             </div>
           </div>
-          <!-- Game 2 row (with clamp on input) -->
           <div class="game-row">
             <span class="game-label">Game 2:</span>
             <div class="score-inputs">
@@ -94,7 +115,6 @@
               <input type="number" v-model.number="game2ScoreB" min="0" max="7" @input="clampToSeven($event, 'game2ScoreB')" class="score-box" />
             </div>
           </div>
-          <!-- Tie row (no max, no clamp) -->
           <div class="game-row">
             <span class="game-label">Tie:</span>
             <div class="score-inputs">
@@ -114,6 +134,8 @@
 </template>
 
 <script>
+import { invoke } from '@tauri-apps/api/core';
+
 export default {
   name: 'Group',
   props: {
@@ -122,6 +144,10 @@ export default {
       default: () => []
     },
     anyModalOpen: {
+      type: Boolean,
+      default: false
+    },
+    swapMode: {
       type: Boolean,
       default: false
     }
@@ -144,15 +170,14 @@ export default {
     };
   },
   methods: {
-    // Clamp method for Game1/Game2 inputs (called via @input)
     clampToSeven(event, property) {
       const value = parseInt(event.target.value) || 0;
       const clamped = Math.min(value, 7);
       this[property] = clamped;
-      event.target.value = clamped; // Reflect in UI immediately
+      event.target.value = clamped;
     },
     handleClick(event) {
-      if (this.isVisible || this.anyModalOpen) return;
+      if (this.isVisible || this.anyModalOpen || this.swapMode) return;
       if (event.target.classList.contains('cell') && !event.target.classList.contains('filled')) {
         const row = parseInt(event.target.dataset.row);
         const col = parseInt(event.target.dataset.col);
@@ -161,7 +186,6 @@ export default {
         this.selectedCol = col;
         this.selectedPlayer1 = this.players[row];
         this.selectedPlayer2 = this.players[col];
-        // Reset all fields on open
         this.game1ScoreA = 0;
         this.game1ScoreB = 0;
         this.game2ScoreA = 0;
@@ -180,7 +204,6 @@ export default {
       this.selectedPlayer2 = null;
       this.selectedRow = -1;
       this.selectedCol = -1;
-      // Reset all fields
       this.game1ScoreA = 0;
       this.game1ScoreB = 0;
       this.game2ScoreA = 0;
@@ -191,13 +214,39 @@ export default {
     },
     submitScores() {
       if (this.selectedRow !== -1 && this.selectedCol !== -1) {
-        // Multi-line string with explicit 0 display (two spaces around dash)
         const game1Line = `${this.game1ScoreA}  -  ${this.game1ScoreB}`;
         const game2Line = `${this.game2ScoreA}  -  ${this.game2ScoreB}`;
         const tieLine = `${this.tieScoreA}  -  ${this.tieScoreB}`;
         this.gridScores[this.selectedRow][this.selectedCol] = `${game1Line}\n${game2Line}\n${tieLine}`;
       }
-      // Log all data
+
+    const p1Id = this.selectedPlayer1?.id;
+    const p2Id = this.selectedPlayer2?.id;
+    if (!Number.isInteger(p1Id) || !Number.isInteger(p2Id) || p1Id < 0 || p2Id < 0) {
+      console.error('Invalid player IDs:', { p1Id, p2Id });
+      alert('Errore: Gli ID dei giocatori non sono validi.');
+      return;
+    }
+
+    // Call the Tauri invoke function with the match result
+    invoke('save_match_result', {p1Id: p1Id, p2Id: p2Id, set1: [this.game1ScoreA.value, this.game1ScoreB.value], set2: [this.game2ScoreA.value, this.game2ScoreB.value], tie: [this.tieScoreA.value, this.tieScoreB.value]})
+      .then(() => {
+        console.log('Match result saved successfully:', matchResult);
+      })
+      .catch((error) => {
+        console.error('Error saving match result:', error);
+        alert('Errore durante il salvataggio del risultato della partita: ', error);
+      });
+
+      // Call the Tauri invoke function with the match result
+      invoke('save_match_result', matchResult)
+        .then(() => {
+          console.log('Match result saved successfully:', matchResult);
+        })
+        .catch((error) => {
+          console.error('Error saving match result:', error);
+        });
+
       console.log({
         match: `${this.selectedPlayer1?.name} vs ${this.selectedPlayer2?.name}`,
         game1: { scoreA: this.game1ScoreA, scoreB: this.game1ScoreB },
@@ -206,11 +255,19 @@ export default {
         mainSwitch: this.mainSwitch
       });
       this.closeModal();
+    },
+    handlePlayerClick(index) {
+      if (this.swapMode && !this.anyModalOpen) {
+        const player = this.players[index];
+        this.$emit('player-selected', {
+          id: player.id ?? null,
+          name: player.name ?? `Giocatore ${index + 1}`
+        });
+      }
     }
   }
 };
 </script>
-
 <style scoped>
 .group-container {
   display: flex;
@@ -487,5 +544,27 @@ input:checked + .switch-slider:before {
     flex-direction: column;
     gap: 0.5rem;
   }
+}
+
+.name {
+  background: rgba(255, 255, 255, 0.7);
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1rem;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  padding-left: 1rem;
+  margin: 0;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.name:hover {
+  background: rgba(79, 172, 254, 0.15);
+}
+
+.player-selected {
+  background: rgba(79, 172, 254, 0.3);
 }
 </style>

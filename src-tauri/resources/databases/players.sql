@@ -19,10 +19,30 @@ CREATE TABLE Player (
     FOREIGN KEY (id_group) REFERENCES PlayerGroup(id) ON DELETE SET NULL
 );
 
+CREATE TABLE ScheduledMatch(
+    player_1 INTEGER,
+    player_2 INTEGER,
+    scheduled_time INTEGER,
+    court INTEGER,
+
+    PRIMARY KEY (player_1, player_2),
+    FOREIGN KEY (player_1) REFERENCES Player(id),
+    FOREIGN KEY (player_2) REFERENCES Player(id),
+
+    CHECK (player_1 < player_2),
+    CHECK (player_1 <> player_2)
+);
+
 CREATE TABLE PlayerMatch (
     player_1 INTEGER,
     player_2 INTEGER,
-    result INTEGER,
+    set_1_win INTEGER,
+    set_1_lose INTEGER,
+    set_2_win INTEGER,
+    set_2_lose INTEGER,
+    tie_win INTEGER,
+    tie_lose INTEGER,
+    
 
     PRIMARY KEY (player_1, player_2),
     FOREIGN KEY (player_1) REFERENCES Player(id),

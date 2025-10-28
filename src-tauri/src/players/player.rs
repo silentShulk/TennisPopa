@@ -1,10 +1,11 @@
-use crate::players::{self, player, Availability, Category, Size};
+use crate::players::{ Availability, Category, Size};
 use rusqlite_struct::rusqlite_struct_helper::RusqliteStructHelper;
 use rusqlite_struct_derive::RusqliteStruct;
 use serde::{Deserialize, Serialize};
 use strsim::jaro;
-use rusqlite::{params, Connection, Result};
-use std::{collections::HashMap, vec};
+use rusqlite::{params, Connection};
+
+use crate::get_resource;
 
 pub trait VecPlayerFuzzyFinder {
     fn search_by_name(&self, to_search: String) -> Vec<Player>;
@@ -37,7 +38,9 @@ impl VecPlayerFuzzyFinder for Vec<Player> {
 
 #[tauri::command]
 pub fn find_player(name: String) -> Vec<Player>{
-    let players_conn = Connection::open("databases/players.db").unwrap();
+
+    let players_conn = Connection::open(get_resource("databases/players.db")).unwrap();
+    //let players_conn = Connection::open("databases/players.db").unwrap();
 
     let all_player = players_conn.get_from_table_struct::<Player>().unwrap();
 
@@ -47,7 +50,8 @@ pub fn find_player(name: String) -> Vec<Player>{
 #[tauri::command]
 pub fn update_spec_player(update_player: Player){
 
-    let players_conn = Connection::open("databases/players.db").unwrap();
+    let players_conn = Connection::open(get_resource("databases/players.db")).unwrap();
+    //let players_conn = Connection::open("databases/players.db").unwrap();
     
     players_conn.execute(
             "INSERT INTO Player (name, email, phone_number, category, date_of_creation, availability, size, id_group)
@@ -64,124 +68,8 @@ pub fn update_spec_player(update_player: Player){
     ).unwrap();   
 }
 
-#[tauri::command]
-pub fn create_groups() { 
-
-    println!("AAAAAAAAAAAAAAAA");
-
-    let conn = Connection::open("databases/players.db").unwrap();
-    let players = conn.get_from_table_struct::<Player>().unwrap();
-
-    let mut players_by_category: HashMap<Category, Vec<Player>> = HashMap::new();
-    players.iter()
-        .for_each(|p|
-             players_by_category
-                .entry(p.category)
-                .or_insert_with(|| Vec::new())
-                .push(p.clone())
-    );    
-
-    const MAX_PLAYERS_IN_GROUP: i32 = 4;
-
-    conn.execute("DELETE FROM PlayerGroup;", []).expect("Couldn't clear PlayerGroup");
-
-    let mut player_group_id = 0;
-    for (category, players_in_category) in players_by_category.iter_mut() {
-        let mut players_in_group = 1;
-        for p in players_in_category {
-            // Create new group, overwrite if it already exist.
-            if players_in_group == 1 {
-                player_group_id += 1;
-                conn.execute(
-                    "INSERT INTO PlayerGroup (id, category)
-                        VALUES (?1, ?2)
-                        ON CONFLICT(id) DO UPDATE SET
-                            category = excluded.category",
-                            params![player_group_id, category]
-                ).unwrap();
-            }
-
-            // Set current player's group id.
-            p.id_group = Some(player_group_id);
-
-            // Go to next group id if group is full.
-            if players_in_group == MAX_PLAYERS_IN_GROUP {
-                players_in_group = 1;
-            } else {
-                players_in_group += 1;
-            }
-        }
-
-        // Go to next group.
-        player_group_id += 1;
-    }
-
-    let mut players_edited: Vec<Player> = vec![];
-    players_by_category.values().into_iter().for_each(|players| {
-        players.iter().for_each(|p| players_edited.push(p.clone()));
-    });
-
-    println!("{}", players_edited.len());
-    let mut i = 0;
-    for p in players_edited {
-
-        println!("{}", i);
-        i +=1;
-        conn.execute(
-                "UPDATE Player
-                 SET id_group = ?1
-                 WHERE id  = ?2",
-            params![p.id_group, p.id.unwrap()],
-        ).unwrap();
-    }
-}
-
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, RusqliteStruct)]
-struct Courts {
-    id: Option<i32>,
-    c1_sat: u32,
-    c1_sun: u32,
-    c2_sat: u32,
-    c2_sun: u32,
-    c3_sat: u32,
-    c3_sun: u32,
-    c4_sat: u32,
-    c4_sun: u32,
-    c6_sat: u32,
-    c6_sun: u32,    
-    cg1_sat: u32,
-    cg1_sun: u32,
-    cg2_sat: u32,
-    cg2_sun: u32,
-}
 
 #[tauri::command]
-pub fn save_availability_court(c1: (u32, u32), c2: (u32, u32), c3: (u32, u32), c4: (u32, u32), c6: (u32, u32), cg1: (u32, u32), cg2: (u32, u32)) {
-    let courts = Courts {
-        id: None,
-        c1_sat: c1.0,
-        c1_sun: c1.1,
-        c2_sat: c2.0,
-        c2_sun: c2.1,
-        c3_sat: c3.0,
-        c3_sun: c3.1,
-        c4_sat: c4.0,
-        c4_sun: c4.1,
-        c6_sat: c6.0,
-        c6_sun: c6.1,
-        cg1_sat: cg1.0,
-        cg1_sun: cg1.1,
-        cg2_sat: cg2.0,
-        cg2_sun: cg2.1,
-    };
-
-    let conn = Connection::open("databases/courts.db").expect("Couldn't open database at \"databases/courts.db\".");
-    conn.insert_into_table_struct::<Courts>(&courts).expect("Couldn't insert Courts inside of DB.");
-}
-
-
-#[tauri::command]
-pub fn salve_match_result(p1: Player, p2: Player, game1: (u32, u32), game2: (u32, u32), tie: (u32, u32)){
-    
+pub fn save_match_result(p1_id: u32, p2_id: u32, set1: (u32, u32), set2: (u32, u32), tie: (u32, u32)){
+    println!("p1:{} p2:{} {}-{} {}-{} {}-{}", p1_id, p2_id, set1.0, set1.1, set2.0, set2.1, tie.0, tie.1);
 }

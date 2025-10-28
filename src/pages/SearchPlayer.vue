@@ -48,7 +48,7 @@
         </div>
 
         <div class="detail-item">
-          <strong>Categoria:</strong> 
+          <strong>Categoria: </strong> 
           <span class="value-badge category-badge">{{ getCategoryText(selectedPlayer.category) }}</span>
         </div>
 
@@ -115,7 +115,7 @@
         </div>
 
         <div class="detail-item">
-          <strong>Taglia:</strong>
+          <strong>Taglia: </strong>
           <select v-model="editedPlayer.size" class="edit-select">
             <option :value="0">XS</option>
             <option :value="1">S</option>

@@ -1,17 +1,20 @@
-use std::{path::Path};
+
 use rusqlite::{Connection, Result};
 use rusqlite_struct::{rusqlite_struct_helper::RusqliteStructHelper};
 use yup_oauth2::{read_application_secret, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 use reqwest::Client;
 use serde_json::json;
 
+use crate::get_resource;
 use crate::forms::forms_info::*;
 
 #[tauri::command]
 pub async fn create_form(form_info: FormInfo) -> Result<String, String> {
-    let secret = read_application_secret(Path::new("secrets/credentials.json")).await.unwrap();
+    let secret = read_application_secret(get_resource("secrets/credentials.json")).await.unwrap();
+    //let secret = read_application_secret(Path::new("secrets/credentials.json")).await.unwrap();
     let auth = InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::HTTPRedirect)
-        .persist_tokens_to_disk("secrets/token.json") // DB???
+        //.persist_tokens_to_disk("secrets/token.json")
+        .persist_tokens_to_disk(get_resource("secrets/token.json"))
         .build()
         .await
         .unwrap();
@@ -82,7 +85,6 @@ pub async fn create_form(form_info: FormInfo) -> Result<String, String> {
 
     let question_ids_joined = question_ids.join("~");
     
-    /*
     let conn = Connection::open("databases/forms.db").unwrap();
     match form_info.form_type {
         FormType::Registration => {
@@ -107,7 +109,6 @@ pub async fn create_form(form_info: FormInfo) -> Result<String, String> {
             ).unwrap();
         },
     };
-    */
     
     return Ok(form_url);
 }

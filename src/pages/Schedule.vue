@@ -16,18 +16,18 @@ const saturdayCurtsSchedule = [
 ]
 
 const sundayCurtsSchedule = [
-  { value: 1, label: '8:00' },
-  { value: 2, label: '9:00' },
-  { value: 4, label: '10:00' },
-  { value: 8, label: '11:00' },
-  { value: 16, label: '12:00' },
-  { value: 32, label: '13:00' },
-  { value: 64, label: '14:00' },
-  { value: 128, label: '15:00' },
-  { value: 256, label: '16:00' },
-  { value: 512, label: '17:00' },
-  { value: 1024, label: '18:00' },
-  { value: 2048, label: '19:00' }
+  { value: 128, label: '8:00' },
+  { value: 256, label: '9:00' },
+  { value: 512, label: '10:00' },
+  { value: 1024, label: '11:00' },
+  { value: 2048, label: '12:00' },
+  { value: 4096, label: '13:00' },
+  { value: 8192, label: '14:00' },
+  { value: 16384, label: '15:00' },
+  { value: 32768, label: '16:00' },
+  { value: 65536, label: '17:00' },
+  { value: 131072, label: '18:00' },
+  { value: 262144, label: '19:00' }
 ]
 
 const selectCourt1Schedule = ref([])
@@ -38,16 +38,16 @@ const selectCourt6Schedule = ref([])
 const selectCourtG1Schedule = ref([])
 const selectCourtG2Schedule = ref([])
 
-// Variabili per ogni campo, contenenti una tupla [saturdaySum, sundaySum]
-const court1Selections = ref([0, 0]) // [Sabato, Domenica]
-const court2Selections = ref([0, 0])
-const court3Selections = ref([0, 0])
-const court4Selections = ref([0, 0])
-const court6Selections = ref([0, 0])
-const courtG1Selections = ref([0, 0])
-const courtG2Selections = ref([0, 0])
+// Variables for each court, containing the total sum of selected values across both days
+const court1Selections = ref(0)
+const court2Selections = ref(0)
+const court3Selections = ref(0)
+const court4Selections = ref(0)
+const court6Selections = ref(0)
+const courtG1Selections = ref(0)
+const courtG2Selections = ref(0)
 
-// Temporanei per salvare le selezioni di ogni giorno
+// Temporary storage for selections per day
 const saturdaySelections = ref({
   court1: [], court2: [], court3: [], court4: [], court6: [], courtG1: [], courtG2: []
 })
@@ -55,15 +55,15 @@ const sundaySelections = ref({
   court1: [], court2: [], court3: [], court4: [], court6: [], courtG1: [], courtG2: []
 })
 
-// Funzione helper per calcolare la somma dei valori
+// Helper function to calculate the sum of values in an array
 const sumValues = (array) => {
   return array.reduce((sum, value) => sum + value, 0)
 }
 
-// Funzione per aggiornare il programma in base al giorno selezionato
+// Function to update the schedule based on the selected day
 const selectDay = () => {
   curtsSchedule.value = day.value === '0' ? saturdayCurtsSchedule : sundayCurtsSchedule
-  // Carica le selezioni salvate per il giorno selezionato
+  // Load saved selections for the selected day
   const selections = day.value === '0' ? saturdaySelections.value : sundaySelections.value
   selectCourt1Schedule.value = [...selections.court1]
   selectCourt2Schedule.value = [...selections.court2]
@@ -74,8 +74,9 @@ const selectDay = () => {
   selectCourtG2Schedule.value = [...selections.courtG2]
 }
 
-// Salva le selezioni quando cambiano
+// Function to save selections and update sums
 const saveSelections = () => {
+  // Update the selections for the current day
   const target = day.value === '0' ? saturdaySelections.value : sundaySelections.value
   target.court1 = [...selectCourt1Schedule.value]
   target.court2 = [...selectCourt2Schedule.value]
@@ -85,38 +86,17 @@ const saveSelections = () => {
   target.courtG1 = [...selectCourtG1Schedule.value]
   target.courtG2 = [...selectCourtG2Schedule.value]
 
-  // Aggiorna le tuple con le somme
-  court1Selections.value = [
-    sumValues(saturdaySelections.value.court1),
-    sumValues(sundaySelections.value.court1)
-  ]
-  court2Selections.value = [
-    sumValues(saturdaySelections.value.court2),
-    sumValues(sundaySelections.value.court2)
-  ]
-  court3Selections.value = [
-    sumValues(saturdaySelections.value.court3),
-    sumValues(sundaySelections.value.court3)
-  ]
-  court4Selections.value = [
-    sumValues(saturdaySelections.value.court4),
-    sumValues(sundaySelections.value.court4)
-  ]
-  court6Selections.value = [
-    sumValues(saturdaySelections.value.court6),
-    sumValues(sundaySelections.value.court6)
-  ]
-  courtG1Selections.value = [
-    sumValues(saturdaySelections.value.courtG1),
-    sumValues(sundaySelections.value.courtG1)
-  ]
-  courtG2Selections.value = [
-    sumValues(saturdaySelections.value.courtG2),
-    sumValues(sundaySelections.value.courtG2)
-  ]
+  // Update the total sums for each court (Saturday + Sunday)
+  court1Selections.value = sumValues(saturdaySelections.value.court1) + sumValues(sundaySelections.value.court1)
+  court2Selections.value = sumValues(saturdaySelections.value.court2) + sumValues(sundaySelections.value.court2)
+  court3Selections.value = sumValues(saturdaySelections.value.court3) + sumValues(sundaySelections.value.court3)
+  court4Selections.value = sumValues(saturdaySelections.value.court4) + sumValues(sundaySelections.value.court4)
+  court6Selections.value = sumValues(saturdaySelections.value.court6) + sumValues(sundaySelections.value.court6)
+  courtG1Selections.value = sumValues(saturdaySelections.value.courtG1) + sumValues(sundaySelections.value.courtG1)
+  courtG2Selections.value = sumValues(saturdaySelections.value.courtG2) + sumValues(sundaySelections.value.courtG2)
 }
 
-// Funzione per ottenere tutte le selezioni come oggetto di tuple
+// Function to get all selections
 const getAllSelections = () => {
   return {
     court1: court1Selections.value,
@@ -129,20 +109,32 @@ const getAllSelections = () => {
   }
 }
 
-// Watch per salvare automaticamente le selezioni quando cambiano
-watch([
-  selectCourt1Schedule, selectCourt2Schedule, selectCourt3Schedule,
-  selectCourt4Schedule, selectCourt6Schedule, selectCourtG1Schedule,
-  selectCourtG2Schedule
-], () => {
-  if (day.value !== '') {
-    saveSelections()
-  }
-})
+// Watch for changes in selections and save automatically
+watch(
+  [
+    selectCourt1Schedule, selectCourt2Schedule, selectCourt3Schedule,
+    selectCourt4Schedule, selectCourt6Schedule, selectCourtG1Schedule,
+    selectCourtG2Schedule
+  ],
+  () => {
+    if (day.value !== '') {
+      saveSelections()
+    }
+  },
+  { deep: true }
+)
 
-// Mostra le selezioni con un alert
+// Save selections to backend
 const showSelections = () => {
-  invoke('save_availability_court' , { c1: court1Selections.value, c2: court2Selections.value, c3: court3Selections.value, c4: court4Selections.value, c6: court6Selections.value, cg1: courtG1Selections.value, cg2: courtG2Selections.value})
+  invoke('save_availability_court', {
+    c1: court1Selections.value,
+    c2: court2Selections.value,
+    c3: court3Selections.value,
+    c4: court4Selections.value,
+    c6: court6Selections.value,
+    cg1: courtG1Selections.value,
+    cg2: courtG2Selections.value
+  })
 }
 </script>
 

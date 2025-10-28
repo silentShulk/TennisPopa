@@ -2,8 +2,6 @@ use bitflags::bitflags;
 use rusqlite::{types::{FromSql, FromSqlResult, ToSqlOutput, Value, ValueRef}, ToSql};
 use serde::{Serialize, Deserialize};
 
-// TODO: Aggiungere possibilmente con una proc macro la possibilità di aggiungere altre fasce orarie e fare velocemente 
-//       il cast a string ottenendo i nomi dei field a runtime soprattutto per la creazione dei form e il get delle loro info.
 bitflags! {
     #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq, Hash)]
     pub struct Availability: i32 {

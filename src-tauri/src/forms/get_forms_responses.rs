@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, path::Path, vec};
+use std::{collections::HashMap, error::Error, vec};
 use chrono::{DateTime, Utc};
 use yup_oauth2::{read_application_secret, AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 use reqwest::Client;
@@ -8,8 +8,9 @@ use rusqlite_struct_derive::RusqliteStruct;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::get_resource;
 use crate::forms::forms_info::FormType;
-use crate::players::{Availability, Player, player::VecPlayerFuzzyFinder};
+use crate::players::{Availability, Player};
 
 #[derive(Debug, Clone, Serialize, Deserialize, RusqliteStruct)]
 pub struct RegistrationFormItems {
@@ -30,9 +31,11 @@ pub struct AvailabilityFormItems {
 
 #[tauri::command]
 pub async fn main_get_forms_responses(form_type: FormType) -> Result<(), String> {
-    let secret = read_application_secret(Path::new("secrets/credentials.json")).await.unwrap();
+    let secret = read_application_secret(get_resource("secrets/credentials.json")).await.unwrap();
+    //let secret = read_application_secret(Path::new("secrets/credentials.json")).await.unwrap();
     let auth = InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::HTTPRedirect)
-        .persist_tokens_to_disk("secrets/token.json")
+        //.persist_tokens_to_disk("secrets/token.json")
+        .persist_tokens_to_disk(get_resource("secrets/token.json"))
         .build()
         .await
         .unwrap();
@@ -51,9 +54,8 @@ pub async fn main_get_forms_responses(form_type: FormType) -> Result<(), String>
 }
 
 async fn save_registration_responses(client: &Client, token: &AccessToken) -> Result<(), String> {
-    println!("regi");
-    
-    let forms_conn = Connection::open("databases/forms.db").unwrap();
+    let forms_conn = Connection::open(get_resource("databases/forms.db")).unwrap();
+    //let forms_conn = Connection::open("databases/forms.db").unwrap();
     
     let registration_forms = forms_conn.get_from_table_struct::<RegistrationFormItems>().unwrap(); 
     let primary_registration_form_opt = registration_forms.iter().find(|&x| x.is_primary);
@@ -130,7 +132,8 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
     player_registrations = latest.into_values().collect();
 
     // Push into DB
-    let players_conn = Connection::open("databases/players.db").unwrap();
+    let players_conn = Connection::open(get_resource("databases/players.db")).unwrap();
+    //let players_conn = Connection::open("databases/players.db").unwrap();
     for pr in player_registrations.iter() {
         players_conn.execute(
             "INSERT INTO Player (name, email, phone_number, category, date_of_creation, size, id_group)
@@ -152,10 +155,9 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
 
 /// IMPORTANT!
 /// When calling this function make sure to warn the user that it will reset all availabilities for all players!
-async fn save_availability_responses(client: &Client, token: &AccessToken) -> Result<(), Box<dyn Error>> {
-    println!("dispo");
-    
-    let forms_conn = Connection::open("databases/forms.db")?;
+async fn save_availability_responses(client: &Client, token: &AccessToken) -> Result<(), Box<dyn Error>> {    
+    let forms_conn = Connection::open(get_resource("databases/forms.db")).unwrap();
+    //let forms_conn = Connection::open("databases/forms.db")?;
     
     let availability_forms = forms_conn.get_from_table_struct::<AvailabilityFormItems>()?; 
     let primary_availability_form_opt = availability_forms.iter().find(|&x| x.id.unwrap_or(0) == availability_forms.len() as i32);
@@ -234,7 +236,8 @@ async fn save_availability_responses(client: &Client, token: &AccessToken) -> Re
     // Reset all players' availabilities to default,
     // Then set the availabilities gotten from form for those who sent it.
     // -------------------------------------------------------------------
-    let players_conn = Connection::open("databases/players.db")?;
+    let players_conn = Connection::open(get_resource("databases/players.db")).unwrap();
+    //let players_conn = Connection::open("databases/players.db")?;
     players_conn.execute("UPDATE Player SET availability = ?1", [Availability::all()])?;
 
     for tp in time_preferences.iter() {
