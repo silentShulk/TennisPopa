@@ -25,6 +25,7 @@
       <div class="cell" :class="{ filled: gridScores[0][3] !== '' }" data-row="0" data-col="3">
         <span>{{ gridScores[0][3] }}</span>
       </div>
+
       <!-- Row 1 (Player 2) -->
       <p
         class="name"
@@ -45,6 +46,7 @@
       <div class="cell" :class="{ filled: gridScores[1][3] !== '' }" data-row="1" data-col="3">
         <span>{{ gridScores[1][3] }}</span>
       </div>
+
       <!-- Row 2 (Player 3) -->
       <p
         class="name"
@@ -65,6 +67,7 @@
       <div class="cell" :class="{ filled: gridScores[2][3] !== '' }" data-row="2" data-col="3">
         <span>{{ gridScores[2][3] }}</span>
       </div>
+
       <!-- Row 3 (Player 4) -->
       <p
         class="name"
@@ -86,7 +89,8 @@
         <span>{{ gridScores[3][3] }}</span>
       </div>
     </div>
-    <!-- Teleport modal to body for isolation -->
+
+    <!-- Modal (teleported to body) -->
     <Teleport to="body">
       <div v-if="isVisible" class="modal">
         <div class="modal-content">
@@ -99,6 +103,7 @@
             <span class="player-name">{{ selectedPlayer2?.name || 'Giocatore 2' }}</span>
           </div>
           <h3>Inserisci i punteggi</h3>
+
           <div class="game-row">
             <span class="game-label">Game 1:</span>
             <div class="score-inputs">
@@ -107,6 +112,7 @@
               <input type="number" v-model.number="game1ScoreB" min="0" max="7" @input="clampToSeven($event, 'game1ScoreB')" class="score-box" />
             </div>
           </div>
+
           <div class="game-row">
             <span class="game-label">Game 2:</span>
             <div class="score-inputs">
@@ -115,6 +121,7 @@
               <input type="number" v-model.number="game2ScoreB" min="0" max="7" @input="clampToSeven($event, 'game2ScoreB')" class="score-box" />
             </div>
           </div>
+
           <div class="game-row">
             <span class="game-label">Tie:</span>
             <div class="score-inputs">
@@ -123,6 +130,7 @@
               <input type="number" v-model.number="tieScoreB" min="0" class="score-box" />
             </div>
           </div>
+
           <div class="modal-buttons">
             <button class="confirm" @click.stop="submitScores">OK</button>
             <button class="cancel" @click.stop="closeModal">Annulla</button>
@@ -139,18 +147,9 @@ import { invoke } from '@tauri-apps/api/core';
 export default {
   name: 'Group',
   props: {
-    players: {
-      type: Array,
-      default: () => []
-    },
-    anyModalOpen: {
-      type: Boolean,
-      default: false
-    },
-    swapMode: {
-      type: Boolean,
-      default: false
-    }
+    players: { type: Array, default: () => [] },
+    anyModalOpen: { type: Boolean, default: false },
+    swapMode: { type: Boolean, default: false }
   },
   data() {
     return {
@@ -176,12 +175,14 @@ export default {
       this[property] = clamped;
       event.target.value = clamped;
     },
+
     handleClick(event) {
       if (this.isVisible || this.anyModalOpen || this.swapMode) return;
       if (event.target.classList.contains('cell') && !event.target.classList.contains('filled')) {
         const row = parseInt(event.target.dataset.row);
         const col = parseInt(event.target.dataset.col);
         if (this.gridScores[row][col] !== '') return;
+
         this.selectedRow = row;
         this.selectedCol = col;
         this.selectedPlayer1 = this.players[row];
@@ -197,6 +198,7 @@ export default {
         this.$emit('modal-opened');
       }
     },
+
     closeModal() {
       this.$emit('modal-closed');
       this.isVisible = false;
@@ -212,50 +214,62 @@ export default {
       this.tieScoreB = 0;
       this.mainSwitch = false;
     },
-    submitScores() {
+
+    async submitScores() {
+      // 1. Update the grid UI
       if (this.selectedRow !== -1 && this.selectedCol !== -1) {
-        const game1Line = `${this.game1ScoreA}  -  ${this.game1ScoreB}`;
-        const game2Line = `${this.game2ScoreA}  -  ${this.game2ScoreB}`;
-        const tieLine = `${this.tieScoreA}  -  ${this.tieScoreB}`;
-        this.gridScores[this.selectedRow][this.selectedCol] = `${game1Line}\n${game2Line}\n${tieLine}`;
+        const g1 = `${this.game1ScoreA} - ${this.game1ScoreB}`;
+        const g2 = `${this.game2ScoreA} - ${this.game2ScoreB}`;
+        const tie = `${this.tieScoreA} - ${this.tieScoreB}`;
+        this.gridScores[this.selectedRow][this.selectedCol] = `${g1}\n${g2}\n${tie}`;
       }
 
-    const p1Id = this.selectedPlayer1?.id;
-    const p2Id = this.selectedPlayer2?.id;
-    if (!Number.isInteger(p1Id) || !Number.isInteger(p2Id) || p1Id < 0 || p2Id < 0) {
-      console.error('Invalid player IDs:', { p1Id, p2Id });
-      alert('Errore: Gli ID dei giocatori non sono validi.');
-      return;
-    }
+      // 2. Validate player IDs
+      const p1_id = Number(this.selectedPlayer1?.id);
+      const p2_id = Number(this.selectedPlayer2?.id);
 
-    // Call the Tauri invoke function with the match result
-    invoke('save_match_result', {p1Id: p1Id, p2Id: p2Id, set1: [this.game1ScoreA.value, this.game1ScoreB.value], set2: [this.game2ScoreA.value, this.game2ScoreB.value], tie: [this.tieScoreA.value, this.tieScoreB.value]})
-      .then(() => {
-        console.log('Match result saved successfully:', matchResult);
-      })
-      .catch((error) => {
-        console.error('Error saving match result:', error);
-        alert('Errore durante il salvataggio del risultato della partita: ', error);
-      });
+      if (!Number.isInteger(p1Id) || !Number.isInteger(p2Id) || p1Id < 0 || p2Id < 0) {
+        alert('Errore: gli ID dei giocatori non sono validi.');
+        this.closeModal();
+        return;
+      }
 
-      // Call the Tauri invoke function with the match result
-      invoke('save_match_result', matchResult)
-        .then(() => {
-          console.log('Match result saved successfully:', matchResult);
-        })
-        .catch((error) => {
-          console.error('Error saving match result:', error);
-        });
+      // 3. Handle main switch (swap scores if toggled)
+      const [set1A, set1B] = this.mainSwitch
+        ? [this.game1ScoreB, this.game1ScoreA]
+        : [this.game1ScoreA, this.game1ScoreB];
 
-      console.log({
-        match: `${this.selectedPlayer1?.name} vs ${this.selectedPlayer2?.name}`,
-        game1: { scoreA: this.game1ScoreA, scoreB: this.game1ScoreB },
-        game2: { scoreA: this.game2ScoreA, scoreB: this.game2ScoreB },
-        tie: { scoreA: this.tieScoreA, scoreB: this.tieScoreB },
-        mainSwitch: this.mainSwitch
-      });
-      this.closeModal();
+      const [set2A, set2B] = this.mainSwitch
+        ? [this.game2ScoreB, this.game2ScoreA]
+        : [this.game2ScoreA, this.game2ScoreB];
+
+      const [tieA, tieB] = this.mainSwitch
+        ? [this.tieScoreB, this.tieScoreA]
+        : [this.tieScoreA, this.tieScoreB];
+
+      // 4. Build payload with EXACT snake_case keys
+      const payload = {
+        p1Id: p1_id,
+        p2Id: p2_id,
+        set1: [set1A, set1B],
+        set2: [set2A, set2B],
+        tie: [tieA, tieB]
+      };
+
+      alert('Sending to Rust:', payload); // ← Debug here
+
+      // 5. Call Tauri command
+      try {
+        await invoke('save_match_result', payload);
+        alert("BACKEND CALLED");
+      } catch (error) {
+        console.error('Tauri invoke failed:', error);
+        alert('Errore durante il salvataggio del risultato: ' + error);
+      } finally {
+        this.closeModal();
+      }
     },
+
     handlePlayerClick(index) {
       if (this.swapMode && !this.anyModalOpen) {
         const player = this.players[index];
@@ -268,6 +282,7 @@ export default {
   }
 };
 </script>
+
 <style scoped>
 .group-container {
   display: flex;
@@ -305,6 +320,16 @@ export default {
   align-items: center;
   padding-left: 1rem;
   margin: 0;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.name:hover {
+  background: rgba(79, 172, 254, 0.15);
+}
+
+.player-selected {
+  background: rgba(79, 172, 254, 0.3);
 }
 
 .cell {
@@ -331,7 +356,6 @@ export default {
   text-align: center;
 }
 
-/* UPDATED: Restore color for non-clickable cells (filled + diagonals) */
 .filled {
   background: linear-gradient(135deg, #4facfe, #00f2fe);
   border: none;
@@ -524,47 +548,21 @@ input:checked + .switch-slider:before {
     grid-template-columns: 100px repeat(4, 45px);
     grid-template-rows: repeat(4, 45px);
   }
-
   .modal-content {
     width: 90%;
     padding: 1.5rem;
   }
-
   .game-row {
     flex-direction: column;
     gap: 0.5rem;
     align-items: stretch;
   }
-
   .score-inputs {
     justify-content: center;
   }
-
   .match-header {
     flex-direction: column;
     gap: 0.5rem;
   }
-}
-
-.name {
-  background: rgba(255, 255, 255, 0.7);
-  color: #2c3e50;
-  font-weight: 600;
-  font-size: 1rem;
-  border-right: 1px solid rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  padding-left: 1rem;
-  margin: 0;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.name:hover {
-  background: rgba(79, 172, 254, 0.15);
-}
-
-.player-selected {
-  background: rgba(79, 172, 254, 0.3);
 }
 </style>

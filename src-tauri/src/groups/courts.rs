@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use bitflags::bitflags;
 
 bitflags! {
-    #[derive(Debug, Default, Clone, Copy, Serialize)]
+    #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
     pub struct CourtSlots: i32 {
         const SATH13 = 1 << 0; // 13:00
         const SATH14 = 1 << 1; // 14:00
@@ -21,6 +21,7 @@ bitflags! {
         const SUNH10 = 1 << 9;
         const SUNH11 = 1 << 10;
         const SUNH12 = 1 << 11;
+        
         const SUNH13 = 1 << 12;
         const SUNH14 = 1 << 13;
         const SUNH15 = 1 << 14;
