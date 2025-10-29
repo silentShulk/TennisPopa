@@ -13,16 +13,16 @@
       >
         {{ players[0]?.name || 'Nome 1' }}
       </p>
-      <div class="cell" :class="{ filled: gridScores[0][0] !== '' || 0 === 0 }" data-row="0" data-col="0">
+      <div class="cell" :class="{ diagonal: 0 === 0, scored: gridScores[0][0] !== '' && 0 !== 0 }" data-row="0" data-col="0">
         <span>{{ gridScores[0][0] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[0][1] !== '' }" data-row="0" data-col="1">
+      <div class="cell" :class="{ diagonal: 0 === 1, scored: gridScores[0][1] !== '' && 0 !== 1 }" data-row="0" data-col="1">
         <span>{{ gridScores[0][1] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[0][2] !== '' }" data-row="0" data-col="2">
+      <div class="cell" :class="{ diagonal: 0 === 2, scored: gridScores[0][2] !== '' && 0 !== 2 }" data-row="0" data-col="2">
         <span>{{ gridScores[0][2] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[0][3] !== '' }" data-row="0" data-col="3">
+      <div class="cell" :class="{ diagonal: 0 === 3, scored: gridScores[0][3] !== '' && 0 !== 3 }" data-row="0" data-col="3">
         <span>{{ gridScores[0][3] }}</span>
       </div>
 
@@ -34,16 +34,16 @@
       >
         {{ players[1]?.name || 'Nome 2' }}
       </p>
-      <div class="cell" :class="{ filled: gridScores[1][0] !== '' }" data-row="1" data-col="0">
+      <div class="cell" :class="{ diagonal: 1 === 0, scored: gridScores[1][0] !== '' && 1 !== 0 }" data-row="1" data-col="0">
         <span>{{ gridScores[1][0] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[1][1] !== '' || 1 === 1 }" data-row="1" data-col="1">
+      <div class="cell" :class="{ diagonal: 1 === 1, scored: gridScores[1][1] !== '' && 1 !== 1 }" data-row="1" data-col="1">
         <span>{{ gridScores[1][1] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[1][2] !== '' }" data-row="1" data-col="2">
+      <div class="cell" :class="{ diagonal: 1 === 2, scored: gridScores[1][2] !== '' && 1 !== 2 }" data-row="1" data-col="2">
         <span>{{ gridScores[1][2] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[1][3] !== '' }" data-row="1" data-col="3">
+      <div class="cell" :class="{ diagonal: 1 === 3, scored: gridScores[1][3] !== '' && 1 !== 3 }" data-row="1" data-col="3">
         <span>{{ gridScores[1][3] }}</span>
       </div>
 
@@ -55,16 +55,16 @@
       >
         {{ players[2]?.name || 'Nome 3' }}
       </p>
-      <div class="cell" :class="{ filled: gridScores[2][0] !== '' }" data-row="2" data-col="0">
+      <div class="cell" :class="{ diagonal: 2 === 0, scored: gridScores[2][0] !== '' && 2 !== 0 }" data-row="2" data-col="0">
         <span>{{ gridScores[2][0] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[2][1] !== '' }" data-row="2" data-col="1">
+      <div class="cell" :class="{ diagonal: 2 === 1, scored: gridScores[2][1] !== '' && 2 !== 1 }" data-row="2" data-col="1">
         <span>{{ gridScores[2][1] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[2][2] !== '' || 2 === 2 }" data-row="2" data-col="2">
+      <div class="cell" :class="{ diagonal: 2 === 2, scored: gridScores[2][2] !== '' && 2 !== 2 }" data-row="2" data-col="2">
         <span>{{ gridScores[2][2] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[2][3] !== '' }" data-row="2" data-col="3">
+      <div class="cell" :class="{ diagonal: 2 === 3, scored: gridScores[2][3] !== '' && 2 !== 3 }" data-row="2" data-col="3">
         <span>{{ gridScores[2][3] }}</span>
       </div>
 
@@ -76,16 +76,16 @@
       >
         {{ players[3]?.name || 'Nome 4' }}
       </p>
-      <div class="cell" :class="{ filled: gridScores[3][0] !== '' }" data-row="3" data-col="0">
+      <div class="cell" :class="{ diagonal: 3 === 0, scored: gridScores[3][0] !== '' && 3 !== 0 }" data-row="3" data-col="0">
         <span>{{ gridScores[3][0] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[3][1] !== '' }" data-row="3" data-col="1">
+      <div class="cell" :class="{ diagonal: 3 === 1, scored: gridScores[3][1] !== '' && 3 !== 1 }" data-row="3" data-col="1">
         <span>{{ gridScores[3][1] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[3][2] !== '' }" data-row="3" data-col="2">
+      <div class="cell" :class="{ diagonal: 3 === 2, scored: gridScores[3][2] !== '' && 3 !== 2 }" data-row="3" data-col="2">
         <span>{{ gridScores[3][2] }}</span>
       </div>
-      <div class="cell" :class="{ filled: gridScores[3][3] !== '' || 3 === 3 }" data-row="3" data-col="3">
+      <div class="cell" :class="{ diagonal: 3 === 3, scored: gridScores[3][3] !== '' && 3 !== 3 }" data-row="3" data-col="3">
         <span>{{ gridScores[3][3] }}</span>
       </div>
     </div>
@@ -173,9 +173,10 @@ export default {
     },
     handleClick(event) {
       if (this.isVisible || this.anyModalOpen || this.swapMode) return;
-      if (event.target.classList.contains('cell') && !event.target.classList.contains('filled')) {
-        const row = parseInt(event.target.dataset.row);
-        const col = parseInt(event.target.dataset.col);
+      const target = event.target;
+      if (target.classList.contains('cell') && !target.classList.contains('diagonal') && !target.classList.contains('scored')) {
+        const row = parseInt(target.dataset.row);
+        const col = parseInt(target.dataset.col);
         if (this.gridScores[row][col] !== '') return;
         this.selectedRow = row;
         this.selectedCol = col;
@@ -208,24 +209,7 @@ export default {
       this.mainSwitch = false;
     },
     async submitScores() {
-      // 1. Update the grid UI
-      if (this.selectedRow !== -1 && this.selectedCol !== -1) {
-        const g1 = `${this.game1ScoreA} - ${this.game1ScoreB}`;
-        const g2 = `${this.game2ScoreA} - ${this.game2ScoreB}`;
-        const tie = `${this.tieScoreA} - ${this.tieScoreB}`;
-        this.gridScores[this.selectedRow][this.selectedCol] = `${g1}\n${g2}\n${tie}`;
-      }
-
-      // 2. Validate player IDs (FIXED: use p1_id, p2_id, <= 0)
-      const p1_id = Number(this.selectedPlayer1?.id);
-      const p2_id = Number(this.selectedPlayer2?.id);
-      if (!Number.isInteger(p1_id) || !Number.isInteger(p2_id) || p1_id <= 0 || p2_id <= 0) {
-        alert('Errore: gli ID dei giocatori non sono validi.');
-        this.closeModal();
-        return;
-      }
-
-      // 3. Handle main switch (swap scores if toggled)
+      // 1. Handle main switch (swap scores if toggled)
       const [set1A, set1B] = this.mainSwitch
         ? [this.game1ScoreB, this.game1ScoreA]
         : [this.game1ScoreA, this.game1ScoreB];
@@ -235,6 +219,31 @@ export default {
       const [tieA, tieB] = this.mainSwitch
         ? [this.tieScoreB, this.tieScoreA]
         : [this.tieScoreA, this.tieScoreB];
+
+      // 2. Update the grid UI with mirrored scores
+      if (this.selectedRow !== -1 && this.selectedCol !== -1) {
+        const g1 = `${set1A} - ${set1B}`;
+        const g2 = `${set2A} - ${set2B}`;
+        const tie = `${tieA} - ${tieB}`;
+        this.gridScores[this.selectedRow][this.selectedCol] = `${g1}\n${g2}\n${tie}`;
+
+        // Mirror to opposite cell if not diagonal
+        if (this.selectedRow !== this.selectedCol) {
+          const revG1 = `${set1B} - ${set1A}`;
+          const revG2 = `${set2B} - ${set2A}`;
+          const revTie = `${tieB} - ${tieA}`;
+          this.gridScores[this.selectedCol][this.selectedRow] = `${revG1}\n${revG2}\n${revTie}`;
+        }
+      }
+
+      // 3. Validate player IDs (FIXED: use p1_id, p2_id, <= 0)
+      const p1_id = Number(this.selectedPlayer1?.id);
+      const p2_id = Number(this.selectedPlayer2?.id);
+      if (!Number.isInteger(p1_id) || !Number.isInteger(p2_id) || p1_id <= 0 || p2_id <= 0) {
+        alert('Errore: gli ID dei giocatori non sono validi.');
+        this.closeModal();
+        return;
+      }
 
       // 4. Build payload with EXACT snake_case keys (FIXED)
       const payload = {
@@ -250,10 +259,8 @@ export default {
       // 5. Call Tauri command
       try {
         await invoke('save_match_result', payload);
-        alert("BACKEND CALLED - Match Saved!");
       } catch (error) {
         console.error('Tauri invoke failed:', error);
-        alert('Errore durante il salvataggio del risultato: ' + error);
       } finally {
         this.closeModal();
       }
@@ -325,7 +332,7 @@ export default {
   font-size: 0.7rem;
   line-height: 1.1;
 }
-.cell:hover:not(.filled) {
+.cell:hover:not(.diagonal):not(.scored) {
   background-color: rgba(79, 172, 254, 0.15);
   transform: scale(1.05);
 }
@@ -335,10 +342,16 @@ export default {
   white-space: pre-line;
   text-align: center;
 }
-.filled {
+.diagonal {
   background: linear-gradient(135deg, #4facfe, #00f2fe);
   border: none;
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+  cursor: default;
+  pointer-events: none;
+}
+.scored {
+  background: #b6b5b5;
+  border: 1px solid #dee2e6;
   cursor: default;
   pointer-events: none;
 }

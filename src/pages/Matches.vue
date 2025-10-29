@@ -1,9 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core';
 
 // Stato reattivo per memorizzare le partite
 const matches = ref([]);
+
+// Input di ricerca per il nome del giocatore
+const searchTerm = ref('');
 
 // Funzione per ottenere le partite dal backend
 async function fetchMatches() {
@@ -26,6 +29,18 @@ async function createMatches() {
   }
 }
 
+// Computed per le partite filtrate
+const filteredMatches = computed(() => {
+  if (!searchTerm.value.trim()) {
+    return matches.value;
+  }
+  const term = searchTerm.value.toLowerCase();
+  return matches.value.filter(match => 
+    match.player_1.name.toLowerCase().includes(term) ||
+    match.player_2.name.toLowerCase().includes(term)
+  );
+});
+
 // Chiama fetchMatches quando il componente viene montato
 onMounted(() => {
   fetchMatches();
@@ -39,23 +54,75 @@ const getCourtName = (courtNumber) => {
     2: 'Campo 3',
     3: 'Campo 4',
     4: 'Campo 6',
-    5: 'Campo g1',
-    6: 'Campo g2'
+    5: 'Campo G1',
+    6: 'Campo G2'
     // Aggiungi altri campi se necessario
   };
   return courtNames[courtNumber] || `Campo ${courtNumber}`;
 };
 
-// Funzione per formattare l'orario
-const formatTime = (time) => {
-  const date = new Date(time);
-  return date.toLocaleString('it-IT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+// Funzione per formattare l'orario basato sul valore di CourtSlots (potenza di 2)
+const formatTime = (slotValue) => {
+  switch(slotValue) {
+    case "SATH13":
+      return "Sabato, 13:00";
+      break;
+    case "SATH14":
+      return "Sabato, 14:00";
+      break;
+    case "SATH15":
+      return "Sabato, 15:00";
+      break;
+    case "SATH16":
+      return "Sabato, 16:00";
+      break;
+    case "SATH17":
+      return "Sabato, 17:00";
+      break;
+    case "SATH18":
+      return "Sabato, 18:00";
+      break;
+    case "SATH19":
+      return "Sabato, 19:00";
+      break;
+    case "SUNH8":
+      return "Domenica, 8:00";
+      break;
+    case "SUNH9":
+      return "Domenica, 9:00";
+      break;
+    case "SUNH10":
+      return "Domenica, 10:00";
+      break;
+    case "SUNH11":
+      return "Domenica, 11:00";
+      break;
+    case "SUNH12":
+      return "Domenica, 12:00";
+      break;
+    case "SUNH13":
+      return "Domenica, 13:00";
+      break;
+    case "SUNH14":
+      return "Domenica, 14:00";
+      break;
+    case "SUNH15":
+      return "Domenica, 15:00";
+      break;
+    case "SUNH16":
+      return "Domenica, 16:00";
+      break;
+    case "SUNH17":
+      return "Domenica, 17:00";
+      break;
+    case "SUNH18":
+      return "Domenica, 18:00";
+      break;
+    case "SUNH19":
+      return "Domenica, 19:00";
+      break;
+  }
+  return 'Orario non valido';
 };
 </script>
 
@@ -67,14 +134,30 @@ const formatTime = (time) => {
     <button @click="createMatches">Crea partite</button>
     
     <div class="matches-container">
-      <div v-if="matches.length === 0" class="no-matches">
-        Nessuna partita programmata.
+      <!-- Input di ricerca -->
+      <div class="search-section">
+        <input 
+          v-model="searchTerm" 
+          type="text" 
+          placeholder="Cerca per nome del giocatore..." 
+          class="search-input"
+          @keyup.enter="fetchMatches"
+        />
+      </div>
+      
+      <div v-if="filteredMatches.length === 0" class="no-matches">
+        <span v-if="!searchTerm.trim()">
+          Nessuna partita programmata.
+        </span>
+        <span v-else>
+          Nessuna partita trovata per "{{ searchTerm }}".
+        </span>
       </div>
       <div v-else class="matches-list">
-        <div v-for="(match, index) in matches" :key="index" class="match-card">
+        <div v-for="(match, index) in filteredMatches" :key="index" class="match-card">
           <div class="match-info">
-            <h3>{{ match.player1 }} vs {{ match.player2 }}</h3>
-            <p><strong>Orario:</strong> {{ formatTime(match.time) }}</p>
+            <h3>{{ match.player_1.name }} vs {{ match.player_2.name }}</h3>
+            <p><strong>Orario:</strong> {{ formatTime(match.scheduled_time) }}</p>
             <p><strong>Campo:</strong> {{ getCourtName(match.court) }}</p>
           </div>
         </div>
@@ -106,6 +189,20 @@ const formatTime = (time) => {
   padding: 40px;
   max-width: 1000px;
   margin: 0 auto;
+}
+
+.search-section {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.search-input {
+  padding: 10px 15px;
+  width: 300px;
+  max-width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
 }
 
 .no-matches {
@@ -157,6 +254,10 @@ button:hover {
 @media (max-width: 768px) {
   .matches-container {
     padding: 20px;
+  }
+  
+  .search-input {
+    width: 100%;
   }
 }
 </style>

@@ -1,4 +1,4 @@
-use crate::{get_resource, groups::{courts::Courts, group::{Group, groups_in_category}, group_match::GroupMatch}, players::{Availability, Category}};
+use crate::{get_resource, groups::{courts::Courts, group::{Group, groups_in_category}, group_match::GroupMatch}, players::{Availability, Category, player}};
 use rusqlite::{Connection, ToSql, types::{FromSql, FromSqlResult, ToSqlOutput, Value, ValueRef}};
 use rusqlite_struct::rusqlite_struct_helper::RusqliteStructHelper;
 use rusqlite_struct_derive::RusqliteStruct;
@@ -120,9 +120,54 @@ pub fn schedule_matches_for_all_players() {
     GroupScheduler::schedule_matches_for_all_groups();
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ScheduleMatchFrontend {
+    pub player_1: Player,
+    pub player_2: Player,
+    pub scheduled_time: CourtSlots,
+    pub court: i32
+}
+
 #[tauri::command]
-pub fn get_all_scheduled_matches() -> Vec<ScheduledMatch>{
+pub fn get_all_scheduled_matches() -> Vec<ScheduleMatchFrontend>{
+    let conn = Connection::open(get_resource("databases/players.db")).unwrap();
+    let scheduled_matches = conn.get_from_table_struct::<ScheduledMatch>().unwrap();
+    let players = conn.get_from_table_struct::<Player>().unwrap();
+
+    let mut res: Vec<ScheduleMatchFrontend> = vec![];
+
+    for sm in scheduled_matches.iter(){
+        let player1 = players.iter().find(|p|p.id.unwrap() == sm.player_1);
+        let player2 = players.iter().find(|p|p.id.unwrap() == sm.player_2);
+        let slot = CourtSlots::from_bits_truncate(sm.scheduled_time);
+
+        res.push(ScheduleMatchFrontend { player_1: player1.unwrap().clone(), player_2: player2.unwrap().clone(), scheduled_time: slot, court: sm.court });
+    }
+
+    for i in res.iter(){
+        println!("{:?}-{:?} c:{} t:{:?}", i.player_1.name, i.player_2.name, i.court, i.scheduled_time);
+    }
+
+    return res;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize, RusqliteStruct)]
+struct PlayerMatch{
+    player_1: i32,
+    player_2: i32,
+    set_1_p1: i32,
+    set_1_p2: i32,
+    set_2_p1: i32,
+    set_2_p2: i32,
+    tie_p1: i32,
+    tie_p2: i32,
+}
+
+#[tauri::command]
+pub fn get_all_player_matches() -> Vec<PlayerMatch>{
+    
     let conn = Connection::open(get_resource("databases/players.db")).unwrap();
 
-    return conn.get_from_table_struct::<ScheduledMatch>().unwrap();
+    return conn.get_from_table_struct::<PlayerMatch>().unwrap();
+
 }

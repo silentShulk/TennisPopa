@@ -3,6 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import Group from '../components/Group.vue';
 import { ref, watch, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { save } from '@tauri-apps/plugin-dialog';
+
 
 const route = useRoute();
 const category = ref('');
@@ -120,8 +122,12 @@ onUnmounted(() => {
   selectedPlayer2Id.value = null;
 });
 
-function create_groups() {
-  invoke('create_groups', {});
+async function create_groups() {
+  try {
+    await invoke('create_groups', {});
+  } catch (error) {
+    console.error('Errore durante la creazione dei gruppi:', error);
+  }
 }
 
 function toggleSwapMode() {
@@ -182,8 +188,8 @@ async function handlePlayerSelection(player) {
           <option :value="2">D</option>
           <option :value="1">E</option>
         </select>
-        <button @click="create_excel">Crea excel</button>
         <button @click="create_groups">Crea gironi</button>
+        <button @click="create_excel">Crea excel</button>
         <button :class="{ 'swap-active': swapMode }" @click="toggleSwapMode">
           {{ swapMode ? 'Disattiva Swap' : 'Attiva Swap' }}
         </button>

@@ -12,7 +12,7 @@ use forms::create_forms::create_form;
 use forms::forms_info::*;
 use forms::get_forms_responses::main_get_forms_responses;
 use crate::groups::group::{create_groups, groups_in_category, swap_group_for_players};
-use crate::groups::group_scheduler::schedule_matches_for_all_players;
+use crate::groups::group_scheduler::{get_all_scheduled_matches, schedule_matches_for_all_players};
 use crate::groups::courts::save_availability_court;
 use crate::groups::*;
 use crate::players::player::*;
@@ -61,7 +61,8 @@ pub fn run() {
                                                 create_excel_group,
                                                 save_match_result,
                                                 swap_group_for_players,
-                                                schedule_matches_for_all_players])
+                                                schedule_matches_for_all_players,
+                                                get_all_scheduled_matches])
         .run(tauri::generate_context!())
         .expect("Error while running tauri application");
 }
