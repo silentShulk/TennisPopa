@@ -85,7 +85,7 @@ pub async fn create_form(form_info: FormInfo) -> Result<String, String> {
 
     let question_ids_joined = question_ids.join("~");
     
-    let conn = Connection::open("databases/forms.db").unwrap();
+    let conn = Connection::open(get_resource("databases/forms.db")).unwrap();
     match form_info.form_type {
         FormType::Registration => {
             conn.insert_into_table_struct(

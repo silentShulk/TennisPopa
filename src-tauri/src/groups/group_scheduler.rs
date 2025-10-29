@@ -10,9 +10,9 @@ use crate::players::Player;
 
 #[derive(Debug, Clone, Serialize, Deserialize, RusqliteStruct)]
 struct ScheduledMatch {
-    player_1: Player,
-    player_2: Player,
-    scheduled_time: CourtSlots,
+    player_1: i32,
+    player_2: i32,
+    scheduled_time: i32,
     court: i32,
 }
 
@@ -41,17 +41,15 @@ impl GroupScheduler {
         let mut scheduled_matches: Vec<ScheduledMatch> = vec![];
     
         for gm in all_matches {
-            println!("MATCH: {}-{}", gm.p1.id.unwrap(), gm.p2.id.unwrap());
-
             let match_availability = (gm.p1.availability & gm.p2.availability).bits();
 
             let match_availability_expanded = 
                 GroupScheduler::expand_bits_player_avail(match_availability);
 
 
-            let mut order = [0, 1, 2, 3, 4, 5, 6];
+            let mut order = vec![0, 1, 2, 3, 5, 6];
             if gm.category == Category::E || gm.category == Category::D {
-                order = [4, 0, 1, 2, 3, 5, 6];
+                order = vec![4, 0, 1, 2, 3, 5, 6];
             }
             for i in order {
                 let combined = court_availability[i] & match_availability_expanded;
@@ -70,13 +68,14 @@ impl GroupScheduler {
                 court_availability[i] ^= first_available;
 
                 scheduled_matches.push(ScheduledMatch {
-                     player_1: gm.p1.clone(), player_2: gm.p2.clone(), scheduled_time: first_slot, court: i as i32
+                     player_1: gm.p1.id.unwrap(), player_2: gm.p2.id.unwrap(), scheduled_time: first_available, court: i as i32
                 }); 
+                break;
             }
         }
 
         // TEST!
-        for sm in scheduled_matches {
+        /*for sm in scheduled_matches {
             let a = sm.player_1.availability & sm.player_2.availability;
 
             let match_availability_expanded = 
@@ -84,14 +83,14 @@ impl GroupScheduler {
             if CourtSlots::from_bits_truncate(match_availability_expanded).contains(sm.scheduled_time) {
                 println!("{}) {}-{} {:?} - {:?}", sm.court, sm.player_1.id.unwrap(), sm.player_2.id.unwrap(), CourtSlots::from_bits_truncate(match_availability_expanded), sm.scheduled_time);
             }
-        }
+        }*/
 
-        /*let conn = Connection::open(get_resource("databases/players.db")).unwrap();
+        let conn = Connection::open(get_resource("databases/players.db")).unwrap();
         conn.execute("DELETE FROM ScheduledMatch;", []).unwrap();
 
         for sm in scheduled_matches {
             conn.insert_into_table_struct(&sm).unwrap();
-        }*/
+        }
     }
 
     fn expand_bits_player_avail(flag: i32) -> i32 {

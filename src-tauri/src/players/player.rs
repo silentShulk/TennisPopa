@@ -4,6 +4,7 @@ use rusqlite_struct_derive::RusqliteStruct;
 use serde::{Deserialize, Serialize};
 use strsim::jaro;
 use rusqlite::{params, Connection};
+use tauri::async_runtime::set;
 
 use crate::get_resource;
 
@@ -68,8 +69,60 @@ pub fn update_spec_player(update_player: Player){
     ).unwrap();   
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, RusqliteStruct)]
+struct PlayerMatch {
+    player_1: i32,
+    player_2: i32,
+    set_1_p1: i32,
+    set_1_p2: i32,
+    set_2_p1: i32,
+    set_2_p2: i32,
+    tie_p1: i32,
+    tie_p2: i32,
+}
 
 #[tauri::command]
-pub fn save_match_result(p1_id: u32, p2_id: u32, set1: (u32, u32), set2: (u32, u32), tie: (u32, u32)){
+pub fn save_match_result(p1_id: i32, p2_id: i32, set1: (i32, i32), set2: (i32, i32), tie: (i32, i32)){
     println!("p1:{} p2:{} {}-{} {}-{} {}-{}", p1_id, p2_id, set1.0, set1.1, set2.0, set2.1, tie.0, tie.1);
+
+    let mut p1 = p1_id;
+    let mut p2 = p2_id;
+
+    let (mut set1_p1, mut set1_p2) = set1;
+    let (mut set2_p1, mut set2_p2) = set2;
+    let (mut tie_p1, mut tie_p2) = tie;
+
+    if p1 == p2 {
+        println!("ERRORE: p1_id == p2_id");
+    }
+
+    if p2 < p1 {
+        std::mem::swap(&mut p1, &mut p2);
+        std::mem::swap(&mut set1_p1, &mut set1_p2);
+        std::mem::swap(&mut set2_p1, &mut set2_p2);
+        std::mem::swap(&mut tie_p1, &mut tie_p2);
+    }
+
+    /*let player_match = PlayerMatch {
+        player_1: p1, player_2: p2,
+        set_1_p1: set1_p1, set_1_p2: set1_p2,
+        set_2_p1: set2_p1, set_2_p2: set2_p2,
+        tie_p1: tie_p1, tie_p2: tie_p2
+    };*/
+
+    let conn = Connection::open(get_resource("databases/players.db")).unwrap();
+    conn.execute(
+        "INSERT INTO PlayerMatch 
+        (player_1, player_2, set_1_p1, set_1_p2, set_2_p1, set_2_p2, tie_p1, tie_p2)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        ON CONFLICT(player_1, player_2) DO UPDATE SET
+            set_1_p1 = excluded.set_1_p1,
+            set_1_p2 = excluded.set_1_p2,
+            set_2_p1 = excluded.set_2_p1,
+            set_2_p2 = excluded.set_2_p2,
+            tie_p1 = excluded.tie_p1,
+            tie_p2 = excluded.tie_p2;
+        ",
+        params![p1, p2, set1_p1, set1_p2, set2_p1, set2_p2, tie_p1, tie_p2]
+    ).expect("Couldn't write PlayerMatch in to databases");
 }

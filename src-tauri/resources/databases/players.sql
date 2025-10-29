@@ -36,13 +36,12 @@ CREATE TABLE ScheduledMatch(
 CREATE TABLE PlayerMatch (
     player_1 INTEGER,
     player_2 INTEGER,
-    set_1_win INTEGER,
-    set_1_lose INTEGER,
-    set_2_win INTEGER,
-    set_2_lose INTEGER,
-    tie_win INTEGER,
-    tie_lose INTEGER,
-    
+    set_1_p1 INTEGER,
+    set_1_p2 INTEGER,
+    set_2_p1 INTEGER,
+    set_2_p2 INTEGER,
+    tie_p1 INTEGER,
+    tie_p2 INTEGER,
 
     PRIMARY KEY (player_1, player_2),
     FOREIGN KEY (player_1) REFERENCES Player(id),

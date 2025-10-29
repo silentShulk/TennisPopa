@@ -3,7 +3,6 @@ import { invoke } from '@tauri-apps/api/core';
 import Group from '../components/Group.vue';
 import { ref, watch, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { save } from '@tauri-apps/plugin-dialog';
 
 const route = useRoute();
 const category = ref('');
