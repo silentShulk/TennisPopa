@@ -8,9 +8,9 @@ use crate::group::Group;
 
 #[derive(Debug, Clone)]
 pub struct GroupMatch {
-    p1: Player,
-    p2: Player,
-    category: Category
+    pub p1: Player,
+    pub p2: Player,
+    pub category: Category
 }
 
 #[tauri::command]
