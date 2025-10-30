@@ -43,7 +43,7 @@ async function create_excel() {
       defaultPath: 'gruppi_torneo.xlsx',
     });
     if (filePath) {
-      await invoke('create_excel_group', { path: filePath });
+      await invoke('create_matches_excel', { path: filePath });
       alert('File Excel creato con successo!');
     } else {
       console.log("Operazione annullata dall'utente.");

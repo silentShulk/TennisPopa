@@ -15,6 +15,7 @@ use crate::groups::group::{create_groups, groups_in_category, swap_group_for_pla
 use crate::groups::group_scheduler::{get_all_scheduled_matches, schedule_matches_for_all_players};
 use crate::groups::courts::save_availability_court;
 use crate::groups::*;
+use crate::players::match_excel::create_matches_excel;
 use crate::players::player::*;
 
 static RESOURCE_DIR: Lazy<Mutex<Option<PathBuf>>> = Lazy::new(|| Mutex::new(None));
@@ -62,7 +63,8 @@ pub fn run() {
                                                 save_match_result,
                                                 swap_group_for_players,
                                                 schedule_matches_for_all_players,
-                                                get_all_scheduled_matches])
+                                                get_all_scheduled_matches,
+                                                create_matches_excel])
         .run(tauri::generate_context!())
         .expect("Error while running tauri application");
 }
