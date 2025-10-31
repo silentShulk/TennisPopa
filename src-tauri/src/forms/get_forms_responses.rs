@@ -199,7 +199,14 @@ async fn save_availability_responses(client: &Client, token: &AccessToken) -> Re
             let mut avail_code = 0;
             if let Some(multi_answers) = r["answers"][&question_ids[0]]["textAnswers"]["answers"].as_array() {
                 for ans in multi_answers {
+                    
                     if let Some(val) = ans["value"].as_str() {
+
+                        if val == "NON DISPONIBILE"{
+                            avail_code = 0;
+                            break;
+                        }
+
                         if let Some(&bit) = options_codes.get(val.trim()) {
                             avail_code |= bit;
                         }

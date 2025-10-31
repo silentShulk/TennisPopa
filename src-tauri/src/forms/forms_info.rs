@@ -182,13 +182,14 @@ lazy_static! {
                             "title": "Preferenza oraria",
                             "questionItem": {
                                 "question": {
-                                    "required": true,
+                                    "required": false,
                                     "choiceQuestion": {
                                         "type": "CHECKBOX",
                                         "options": [
                                             { "value": "Sabato pomeriggio" },
                                             { "value": "Domenica mattina" },
-                                            { "value": "Domenica pomeriggio" }
+                                            { "value": "Domenica pomeriggio" },
+                                            { "value": "NON DISPONIBILE" }
                                         ]
                                     }
                                 }
