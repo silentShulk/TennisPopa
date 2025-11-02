@@ -1,38 +1,67 @@
-<script setup>
+<script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core';
-import Group from '../components/Group.vue';
+import Group from '../components/group.vue';
 import { ref, watch, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { save } from '@tauri-apps/plugin-dialog';
 
+// --- INTERFACCIA PARTITA ---
+interface PlayerMatch {
+  player_1: number;
+  player_2: number;
+  set_1_p1: number;
+  set_1_p2: number;
+  set_2_p1: number;
+  set_2_p2: number;
+  tie_p1: number;
+  tie_p2: number;
+}
 
+// --- REFS ---
 const route = useRoute();
 const category = ref('');
-const groups = ref([]);
+const groups = ref<any[]>([]);
+const allMatches = ref<PlayerMatch[]>([]); // <-- Tipo corretto
 const anyModalOpen = ref(false);
-const swapMode = ref(false); // Stato della modalità swap
-const selectedPlayer1Id = ref(null); // ID del primo giocatore selezionato
-const selectedPlayer2Id = ref(null); // ID del secondo giocatore selezionato
+const swapMode = ref(false);
+const selectedPlayer1Id = ref<number | null>(null);
+const selectedPlayer2Id = ref<number | null>(null);
 
-// Called on category change
+// --- FUNZIONI ---
 async function selectedCategory() {
   if (!category.value) {
     groups.value = [];
+    allMatches.value = [];
     return;
   }
   try {
     const categoryInt = parseInt(category.value);
     const result = await invoke('groups_in_category', { category: categoryInt });
     groups.value = Array.isArray(result) ? result : [];
-    console.log('Loaded groups:', groups.value);
-    // Resetta la modalità swap e le selezioni quando cambia categoria
+
+    // Carica tutte le partite
+    await loadAllMatches();
+
+    // Reset swap
     swapMode.value = false;
     selectedPlayer1Id.value = null;
     selectedPlayer2Id.value = null;
   } catch (error) {
     alert('Errore durante la chiamata a groups_in_category: ' + error);
-    console.error('Errore durante la chiamata a groups_in_category:', error);
+    console.error('Errore:', error);
     groups.value = [];
+    allMatches.value = [];
+  }
+}
+
+async function loadAllMatches() {
+  try {
+    const result = await invoke('get_all_player_matches', {});
+    allMatches.value = Array.isArray(result) ? result : [];
+    console.log('Partite caricate:', allMatches.value);
+  } catch (error) {
+    console.error('Errore caricamento partite:', error);
+    allMatches.value = [];
   }
 }
 
@@ -43,14 +72,51 @@ async function create_excel() {
       defaultPath: 'gruppi_torneo.xlsx',
     });
     if (filePath) {
-      await invoke('create_matches_excel', { path: filePath });
+      await invoke('create_excel_group', { path: filePath });
       alert('File Excel creato con successo!');
-    } else {
-      console.log("Operazione annullata dall'utente.");
     }
   } catch (error) {
     alert('Errore durante la creazione del file Excel: ' + error);
-    console.error('Errore durante la creazione del file Excel:', error);
+    console.error('Errore:', error);
+  }
+}
+
+async function create_groups() {
+  try {
+    await invoke('create_groups', {});
+  } catch (error) {
+    console.error('Errore creazione gruppi:', error);
+  }
+}
+
+function toggleSwapMode() {
+  swapMode.value = !swapMode.value;
+  selectedPlayer1Id.value = null;
+  selectedPlayer2Id.value = null;
+}
+
+async function handlePlayerSelection(player: { id: number | null; name: string }) {
+  if (!swapMode.value || anyModalOpen.value) return;
+
+  if (!selectedPlayer1Id.value) {
+    selectedPlayer1Id.value = player.id;
+  } else if (!selectedPlayer2Id.value && player.id !== selectedPlayer1Id.value) {
+    selectedPlayer2Id.value = player.id;
+
+    try {
+      await invoke('swap_group_for_players', {
+        p1Id: selectedPlayer1Id.value,
+        p2Id: selectedPlayer2Id.value
+      });
+      alert('Giocatori swappati!');
+      await selectedCategory(); // Ricarica
+    } catch (error) {
+      alert('Errore swap: ' + error);
+    } finally {
+      swapMode.value = false;
+      selectedPlayer1Id.value = null;
+      selectedPlayer2Id.value = null;
+    }
   }
 }
 
@@ -62,111 +128,51 @@ function onModalClosed() {
   anyModalOpen.value = false;
 }
 
-// Computed: only complete groups (≥ 4 players)
+// --- COMPUTED ---
 const completeGroups = computed(() => {
   return groups.value.filter(group => Array.isArray(group.players) && group.players.length >= 4);
 });
 
-// Computed: players from incomplete groups (< 4 players)
 const incompletePlayers = computed(() => {
   return groups.value
     .filter(group => Array.isArray(group.players) && group.players.length < 4)
-    .flatMap(group => group.players.map(p => ({
+    .flatMap(group => group.players.map((p: { id: any; name: any; }) => ({
       id: p.id ?? null,
       name: p.name ?? p
-    }))); // Include ID e nome
+    })));
 });
 
-// Watch modal state
+// --- WATCHERS ---
 watch(anyModalOpen, (isOpen) => {
   const mainContent = document.querySelector('.main-content');
   if (mainContent) {
-    if (isOpen) {
-      mainContent.classList.add('modal-open');
-    } else {
-      mainContent.classList.remove('modal-open');
-    }
+    mainContent.classList.toggle('modal-open', isOpen);
   }
-  const body = document.body;
-  if (isOpen) {
-    body.style.overflow = 'hidden';
-  } else {
-    body.style.overflow = '';
-  }
+  document.body.style.overflow = isOpen ? 'hidden' : '';
 });
 
-// Watch for route changes to close modal early
 watch(() => route.path, (newPath) => {
   if (newPath !== '/Groups' && anyModalOpen.value) {
     anyModalOpen.value = false;
   }
 });
 
-// Watch per resettare swap mode al cambio categoria
 watch(category, () => {
   swapMode.value = false;
   selectedPlayer1Id.value = null;
   selectedPlayer2Id.value = null;
 });
 
-// Cleanup on unmount
+// --- CLEANUP ---
 onUnmounted(() => {
   const mainContent = document.querySelector('.main-content');
-  if (mainContent) {
-    mainContent.classList.remove('modal-open');
-  }
+  if (mainContent) mainContent.classList.remove('modal-open');
   document.body.style.overflow = '';
   anyModalOpen.value = false;
   swapMode.value = false;
   selectedPlayer1Id.value = null;
   selectedPlayer2Id.value = null;
 });
-
-async function create_groups() {
-  try {
-    await invoke('create_groups', {});
-  } catch (error) {
-    console.error('Errore durante la creazione dei gruppi:', error);
-  }
-}
-
-function toggleSwapMode() {
-  swapMode.value = !swapMode.value;
-  // Resetta selezioni quando si attiva/disattiva la modalità
-  selectedPlayer1Id.value = null;
-  selectedPlayer2Id.value = null;
-}
-
-async function handlePlayerSelection(player) {
-  if (!swapMode.value || anyModalOpen.value) return;
-
-  if (!selectedPlayer1Id.value) {
-    selectedPlayer1Id.value = player.id;
-    console.log('Primo giocatore selezionato:', player.name, player.id);
-  } else if (!selectedPlayer2Id.value && player.id !== selectedPlayer1Id.value) {
-    selectedPlayer2Id.value = player.id;
-    console.log('Secondo giocatore selezionato:', player.name, player.id);
-    // Esegui lo swap
-    try {
-      await invoke('swap_group_for_players', {
-        p1Id: selectedPlayer1Id.value,
-        p2Id: selectedPlayer2Id.value
-      });
-      alert('Giocatori swappati con successo!');
-      // Ricarica i gruppi per riflettere lo swap
-      await selectedCategory();
-    } catch (error) {
-      alert('Errore durante lo swap: ' + error);
-      console.error('Errore durante lo swap:', error);
-    } finally {
-      // Resetta la modalità swap e le selezioni
-      swapMode.value = false;
-      selectedPlayer1Id.value = null;
-      selectedPlayer2Id.value = null;
-    }
-  }
-}
-
 </script>
 
 <template>
@@ -203,9 +209,13 @@ async function handlePlayerSelection(player) {
             :players="group.players"
             :any-modal-open="anyModalOpen"
             :swap-mode="swapMode"
+            :all-matches="allMatches"
+            :selected-player1-id="selectedPlayer1Id"
+            :selected-player2-id="selectedPlayer2Id"
             @modal-opened="onModalOpened"
             @modal-closed="onModalClosed"
             @player-selected="handlePlayerSelection"
+            @match-saved="loadAllMatches"
           />
         </div>
         <div v-if="category && completeGroups.length === 0" class="no-groups-message">
@@ -214,7 +224,6 @@ async function handlePlayerSelection(player) {
       </div>
     </div>
 
-    <!-- Incomplete groups players list -->
     <div v-if="incompletePlayers.length > 0" class="incomplete-section">
       <h2>Giocatori senza gruppo completo</h2>
       <ul>

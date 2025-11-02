@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core';
+import { save } from '@tauri-apps/plugin-dialog';
 
 // Stato reattivo per memorizzare le partite
 const matches = ref([]);
@@ -15,6 +16,42 @@ async function fetchMatches() {
     matches.value = result;
   } catch (error) {
     console.error('Errore nel recupero delle partite:', error);
+  }
+}
+
+async function create_excel() {
+  try {
+    const filePath = await save({
+      filters: [{ name: 'File Excel', extensions: ['xlsx'] }],
+      defaultPath: 'partite_torneo.xlsx',
+    });
+    if (filePath) {
+      await invoke('create_matches_excel', { path: filePath });
+      alert('File Excel creato con successo!');
+    } else {
+      console.log("Operazione annullata dall'utente.");
+    }
+  } catch (error) {
+    alert('Errore durante la creazione del file Excel: ' + error);
+    console.error('Errore durante la creazione del file Excel:', error);
+  }
+}
+
+async function create_excel_with_unscheduled_matches() {
+  try {
+    const filePath = await save({
+      filters: [{ name: 'File Excel', extensions: ['xlsx'] }],
+      defaultPath: 'partite_di_scorta.xlsx',
+    });
+    if (filePath) {
+      await invoke('unscheduled_matches_excel', { path: filePath });
+      alert('File Excel creato con successo!');
+    } else {
+      console.log("Operazione annullata dall'utente.");
+    }
+  } catch (error) {
+    alert('Errore durante la creazione del file Excel: ' + error);
+    console.error('Errore durante la creazione del file Excel:', error);
   }
 }
 
@@ -85,10 +122,10 @@ const formatTime = (slotValue) => {
     case "SATH19":
       return "Sabato, 19:00";
       break;
-    case "SUNH8":
+    case "SUNH08":
       return "Domenica, 8:00";
       break;
-    case "SUNH9":
+    case "SUNH09":
       return "Domenica, 9:00";
       break;
     case "SUNH10":
@@ -131,7 +168,11 @@ const formatTime = (slotValue) => {
     <div class="page-header">
       <h1>Partite</h1>
     </div>
-    <button @click="createMatches">Crea partite</button>
+    <div class="actions-panel">
+      <button @click="createMatches">Crea Partite</button>
+      <button @click="create_excel">Esporta in Excel</button>
+      <button @click="create_excel_with_unscheduled_matches">Excel partite di riserva</button>
+    </div>
     
     <div class="matches-container">
       <!-- Input di ricerca -->
@@ -236,28 +277,72 @@ const formatTime = (slotValue) => {
 }
 
 button {
-  display: block;
-  margin: 20px auto;
-  padding: 10px 20px;
-  background: #27ae60;
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
   color: white;
-  border: none;
-  border-radius: 5px;
   font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
   cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 button:hover {
-  background: #219653;
+  background: linear-gradient(135deg, #66b6ff 0%, #00c4cc 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
+}
+
+.actions-panel {
+  background: white;
+  padding: 18px 30px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin: 20px auto 5px;
+  max-width: 480px;
+  width: fit-content;
+  flex-wrap: wrap;
+}
+
+.actions-panel button {
+  min-width: 150px;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
 }
 
 @media (max-width: 768px) {
   .matches-container {
     padding: 20px;
   }
-  
+
   .search-input {
     width: 100%;
+  }
+  .actions-panel {
+    margin: 30px auto 25px;
+    padding: 16px 20px;
+    gap: 14px;
+    border-radius: 14px;
+  }
+
+  .actions-panel button {
+    min-width: 130px;
+    font-size: 0.95rem;
   }
 }
 </style>

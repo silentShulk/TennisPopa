@@ -72,7 +72,6 @@ impl Group {
 #[tauri::command]
 pub fn create_groups() { 
     let conn = Connection::open(get_resource("databases/players.db")).unwrap();
-    //let conn = Connection::open("databases/players.db").unwrap();
     let players = conn.get_from_table_struct::<Player>().unwrap();
 
     let mut players_by_category: HashMap<Category, Vec<Player>> = HashMap::new();

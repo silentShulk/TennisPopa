@@ -1,3 +1,206 @@
+<script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core';
+import { ref, watch, onMounted } from 'vue';
+
+// --- INTERFACCIA PARTITA ---
+interface PlayerMatch {
+  player_1: number;
+  player_2: number;
+  set_1_p1: number;
+  set_1_p2: number;
+  set_2_p1: number;
+  set_2_p2: number;
+  tie_p1: number;
+  tie_p2: number;
+}
+
+interface Player {
+  id?: number;
+  name?: string;
+}
+
+// --- PROPS ---
+const props = defineProps<{
+  players: Player[];
+  anyModalOpen: boolean;
+  swapMode: boolean;
+  allMatches: PlayerMatch[];
+  selectedPlayer1Id: number | null;
+  selectedPlayer2Id: number | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'modal-opened'): void;
+  (e: 'modal-closed'): void;
+  (e: 'player-selected', player: { id: number | null; name: string }): void;
+  (e: 'match-saved'): void;
+}>();
+
+// --- DATA ---
+const isVisible = ref(false);
+const selectedPlayer1 = ref<Player | null>(null);
+const selectedPlayer2 = ref<Player | null>(null);
+const gridScores = ref<string[][]>(Array(4).fill('').map(() => Array(4).fill('')));
+const selectedRow = ref(-1);
+const selectedCol = ref(-1);
+const game1ScoreA = ref(0);
+const game1ScoreB = ref(0);
+const game2ScoreA = ref(0);
+const game2ScoreB = ref(0);
+const tieScoreA = ref(0);
+const tieScoreB = ref(0);
+const mainSwitch = ref(false);
+
+// --- METODI ---
+function clampToSeven(this: any, event: Event, property: string) {
+  const input = event.target as HTMLInputElement;
+  const value = parseInt(input.value) || 0;
+  const clamped = Math.min(value, 7);
+  (this as any)[property] = clamped;
+  input.value = clamped.toString();
+}
+
+function handleClick(event: MouseEvent) {
+  if (isVisible.value || props.anyModalOpen || props.swapMode) return;
+  const target = event.target as HTMLElement;
+  if (target.classList.contains('cell') && !target.classList.contains('diagonal') && !target.classList.contains('scored')) {
+    const row = parseInt(target.dataset.row!);
+    const col = parseInt(target.dataset.col!);
+    if (gridScores.value[row][col] !== '') return;
+
+    selectedRow.value = row;
+    selectedCol.value = col;
+    selectedPlayer1.value = props.players[row];
+    selectedPlayer2.value = props.players[col];
+    resetScores();
+    isVisible.value = true;
+    emit('modal-opened');
+  }
+}
+
+function resetScores() {
+  game1ScoreA.value = 0;
+  game1ScoreB.value = 0;
+  game2ScoreA.value = 0;
+  game2ScoreB.value = 0;
+  tieScoreA.value = 0;
+  tieScoreB.value = 0;
+  mainSwitch.value = false;
+}
+
+function closeModal() {
+  emit('modal-closed');
+  isVisible.value = false;
+  selectedPlayer1.value = null;
+  selectedPlayer2.value = null;
+  selectedRow.value = -1;
+  selectedCol.value = -1;
+  resetScores();
+}
+
+async function submitScores() {
+  const [set1A, set1B] = mainSwitch.value
+    ? [game1ScoreB.value, game1ScoreA.value]
+    : [game1ScoreA.value, game1ScoreB.value];
+  const [set2A, set2B] = mainSwitch.value
+    ? [game2ScoreB.value, game2ScoreA.value]
+    : [game2ScoreA.value, game2ScoreB.value];
+  const [tieA, tieB] = mainSwitch.value
+    ? [tieScoreB.value, tieScoreA.value]
+    : [tieScoreA.value, tieScoreB.value];
+
+  if (selectedRow.value !== -1 && selectedCol.value !== -1) {
+    const g1 = `${set1A} - ${set1B}`;
+    const g2 = `${set2A} - ${set2B}`;
+    const tie = tieA > 0 || tieB > 0 ? `${tieA} - ${tieB}` : '';
+    const scoreStr = [g1, g2, tie].filter(Boolean).join('\n');
+    gridScores.value[selectedRow.value][selectedCol.value] = scoreStr;
+
+    if (selectedRow.value !== selectedCol.value) {
+      const revG1 = `${set1B} - ${set1A}`;
+      const revG2 = `${set2B} - ${set2A}`;
+      const revTie = tieA > 0 || tieB > 0 ? `${tieB} - ${tieA}` : '';
+      const revScoreStr = [revG1, revG2, revTie].filter(Boolean).join('\n');
+      gridScores.value[selectedCol.value][selectedRow.value] = revScoreStr;
+    }
+  }
+
+  const p1_id = Number(selectedPlayer1.value?.id);
+  const p2_id = Number(selectedPlayer2.value?.id);
+  if (!Number.isInteger(p1_id) || !Number.isInteger(p2_id) || p1_id <= 0 || p2_id <= 0) {
+    alert('Errore: ID giocatori non validi.');
+    closeModal();
+    return;
+  }
+
+  const payload = {
+    p1Id: p1_id,
+    p2Id: p2_id,
+    set1: [set1A, set1B],
+    set2: [set2A, set2B],
+    tie: [tieA, tieB]
+  };
+
+  try {
+    await invoke('save_match_result', payload);
+    emit('match-saved'); // Ricarica le partite
+  } catch (error) {
+    console.error('Errore salvataggio:', error);
+  } finally {
+    closeModal();
+  }
+}
+
+function handlePlayerClick(index: number) {
+  if (props.swapMode && !props.anyModalOpen) {
+    const player = props.players[index];
+    emit('player-selected', {
+      id: player.id ?? null,
+      name: player.name ?? `Giocatore ${index + 1}`
+    });
+  }
+}
+
+// --- CARICAMENTO PARTITE ---
+function populateGridFromMatches() {
+  gridScores.value = Array(4).fill('').map(() => Array(4).fill(''));
+
+  if (!Array.isArray(props.players) || props.players.length === 0) return;
+
+  const idToIndex: Record<number, number> = {};
+  props.players.forEach((player, index) => {
+    if (player?.id) idToIndex[player.id] = index;
+  });
+
+  props.allMatches.forEach(match => {
+    const p1Index = idToIndex[match.player_1];
+    const p2Index = idToIndex[match.player_2];
+    if (p1Index === undefined || p2Index === undefined) return;
+
+    const g1 = `${match.set_1_p1} - ${match.set_1_p2}`;
+    const g2 = `${match.set_2_p1} - ${match.set_2_p2}`;
+    const tie = match.tie_p1 > 0 || match.tie_p2 > 0 ? `${match.tie_p1} - ${match.tie_p2}` : '';
+    const scoreStr = [g1, g2, tie].filter(Boolean).join('\n');
+
+    gridScores.value[p1Index][p2Index] = scoreStr;
+
+    const revG1 = `${match.set_1_p2} - ${match.set_1_p1}`;
+    const revG2 = `${match.set_2_p2} - ${match.set_2_p1}`;
+    const revTie = match.tie_p1 > 0 || match.tie_p2 > 0 ? `${match.tie_p2} - ${match.tie_p1}` : '';
+    const revScoreStr = [revG1, revG2, revTie].filter(Boolean).join('\n');
+
+    gridScores.value[p2Index][p1Index] = revScoreStr;
+  });
+}
+
+onMounted(populateGridFromMatches);
+watch(
+  () => [props.players, props.allMatches],
+  populateGridFromMatches,
+  { deep: true }
+);
+</script>
+
 <template>
   <div class="group-container">
     <div
@@ -5,92 +208,31 @@
       @click="handleClick"
       :class="{ disabled: isVisible || anyModalOpen }"
     >
-      <!-- Row 0 (Player 1) -->
-      <p
-        class="name"
-        :class="{ 'player-selected': players[0]?.id === $parent.selectedPlayer1Id || players[0]?.id === $parent.selectedPlayer2Id }"
-        @click.stop="handlePlayerClick(0)"
-      >
-        {{ players[0]?.name || 'Nome 1' }}
-      </p>
-      <div class="cell" :class="{ diagonal: 0 === 0, scored: gridScores[0][0] !== '' && 0 !== 0 }" data-row="0" data-col="0">
-        <span>{{ gridScores[0][0] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 0 === 1, scored: gridScores[0][1] !== '' && 0 !== 1 }" data-row="0" data-col="1">
-        <span>{{ gridScores[0][1] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 0 === 2, scored: gridScores[0][2] !== '' && 0 !== 2 }" data-row="0" data-col="2">
-        <span>{{ gridScores[0][2] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 0 === 3, scored: gridScores[0][3] !== '' && 0 !== 3 }" data-row="0" data-col="3">
-        <span>{{ gridScores[0][3] }}</span>
-      </div>
-
-      <!-- Row 1 (Player 2) -->
-      <p
-        class="name"
-        :class="{ 'player-selected': players[1]?.id === $parent.selectedPlayer1Id || players[1]?.id === $parent.selectedPlayer2Id }"
-        @click.stop="handlePlayerClick(1)"
-      >
-        {{ players[1]?.name || 'Nome 2' }}
-      </p>
-      <div class="cell" :class="{ diagonal: 1 === 0, scored: gridScores[1][0] !== '' && 1 !== 0 }" data-row="1" data-col="0">
-        <span>{{ gridScores[1][0] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 1 === 1, scored: gridScores[1][1] !== '' && 1 !== 1 }" data-row="1" data-col="1">
-        <span>{{ gridScores[1][1] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 1 === 2, scored: gridScores[1][2] !== '' && 1 !== 2 }" data-row="1" data-col="2">
-        <span>{{ gridScores[1][2] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 1 === 3, scored: gridScores[1][3] !== '' && 1 !== 3 }" data-row="1" data-col="3">
-        <span>{{ gridScores[1][3] }}</span>
-      </div>
-
-      <!-- Row 2 (Player 3) -->
-      <p
-        class="name"
-        :class="{ 'player-selected': players[2]?.id === $parent.selectedPlayer1Id || players[2]?.id === $parent.selectedPlayer2Id }"
-        @click.stop="handlePlayerClick(2)"
-      >
-        {{ players[2]?.name || 'Nome 3' }}
-      </p>
-      <div class="cell" :class="{ diagonal: 2 === 0, scored: gridScores[2][0] !== '' && 2 !== 0 }" data-row="2" data-col="0">
-        <span>{{ gridScores[2][0] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 2 === 1, scored: gridScores[2][1] !== '' && 2 !== 1 }" data-row="2" data-col="1">
-        <span>{{ gridScores[2][1] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 2 === 2, scored: gridScores[2][2] !== '' && 2 !== 2 }" data-row="2" data-col="2">
-        <span>{{ gridScores[2][2] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 2 === 3, scored: gridScores[2][3] !== '' && 2 !== 3 }" data-row="2" data-col="3">
-        <span>{{ gridScores[2][3] }}</span>
-      </div>
-
-      <!-- Row 3 (Player 4) -->
-      <p
-        class="name"
-        :class="{ 'player-selected': players[3]?.id === $parent.selectedPlayer1Id || players[3]?.id === $parent.selectedPlayer2Id }"
-        @click.stop="handlePlayerClick(3)"
-      >
-        {{ players[3]?.name || 'Nome 4' }}
-      </p>
-      <div class="cell" :class="{ diagonal: 3 === 0, scored: gridScores[3][0] !== '' && 3 !== 0 }" data-row="3" data-col="0">
-        <span>{{ gridScores[3][0] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 3 === 1, scored: gridScores[3][1] !== '' && 3 !== 1 }" data-row="3" data-col="1">
-        <span>{{ gridScores[3][1] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 3 === 2, scored: gridScores[3][2] !== '' && 3 !== 2 }" data-row="3" data-col="2">
-        <span>{{ gridScores[3][2] }}</span>
-      </div>
-      <div class="cell" :class="{ diagonal: 3 === 3, scored: gridScores[3][3] !== '' && 3 !== 3 }" data-row="3" data-col="3">
-        <span>{{ gridScores[3][3] }}</span>
-      </div>
+      <!-- Righe giocatore + celle (invariato) -->
+      <!-- ... (tutto il tuo HTML precedente) ... -->
+      <!-- Usa v-for per rendere più pulito -->
+      <template v-for="row in 4" :key="row - 1">
+        <p
+          class="name"
+          :class="{ 'player-selected': props.players[row - 1]?.id === props.selectedPlayer1Id || props.players[row - 1]?.id === props.selectedPlayer2Id}"
+          @click.stop="handlePlayerClick(row - 1)"
+        >
+          {{ props.players[row - 1]?.name || 'Nome ' + row }}
+        </p>
+        <div
+          v-for="col in 4"
+          :key="col - 1"
+          class="cell"
+          :class="{ diagonal: (row - 1) === (col - 1), scored: gridScores[row - 1][col - 1] !== '' && (row - 1) !== (col - 1) }"
+          :data-row="row - 1"
+          :data-col="col - 1"
+        >
+          <span>{{ gridScores[row - 1][col - 1] }}</span>
+        </div>
+      </template>
     </div>
 
-    <!-- Modal (teleported to body) -->
+    <!-- Modal (invariato) -->
     <Teleport to="body">
       <div v-if="isVisible" class="modal">
         <div class="modal-content">
@@ -136,147 +278,6 @@
     </Teleport>
   </div>
 </template>
-
-<script>
-import { invoke } from '@tauri-apps/api/core';
-
-export default {
-  name: 'Group',
-  props: {
-    players: { type: Array, default: () => [] },
-    anyModalOpen: { type: Boolean, default: false },
-    swapMode: { type: Boolean, default: false }
-  },
-  data() {
-    return {
-      isVisible: false,
-      selectedPlayer1: null,
-      selectedPlayer2: null,
-      gridScores: Array(4).fill().map(() => Array(4).fill('')),
-      selectedRow: -1,
-      selectedCol: -1,
-      game1ScoreA: 0,
-      game1ScoreB: 0,
-      game2ScoreA: 0,
-      game2ScoreB: 0,
-      tieScoreA: 0,
-      tieScoreB: 0,
-      mainSwitch: false
-    };
-  },
-  methods: {
-    clampToSeven(event, property) {
-      const value = parseInt(event.target.value) || 0;
-      const clamped = Math.min(value, 7);
-      this[property] = clamped;
-      event.target.value = clamped;
-    },
-    handleClick(event) {
-      if (this.isVisible || this.anyModalOpen || this.swapMode) return;
-      const target = event.target;
-      if (target.classList.contains('cell') && !target.classList.contains('diagonal') && !target.classList.contains('scored')) {
-        const row = parseInt(target.dataset.row);
-        const col = parseInt(target.dataset.col);
-        if (this.gridScores[row][col] !== '') return;
-        this.selectedRow = row;
-        this.selectedCol = col;
-        this.selectedPlayer1 = this.players[row];
-        this.selectedPlayer2 = this.players[col];
-        this.game1ScoreA = 0;
-        this.game1ScoreB = 0;
-        this.game2ScoreA = 0;
-        this.game2ScoreB = 0;
-        this.tieScoreA = 0;
-        this.tieScoreB = 0;
-        this.mainSwitch = false;
-        this.isVisible = true;
-        this.$emit('modal-opened');
-      }
-    },
-    closeModal() {
-      this.$emit('modal-closed');
-      this.isVisible = false;
-      this.selectedPlayer1 = null;
-      this.selectedPlayer2 = null;
-      this.selectedRow = -1;
-      this.selectedCol = -1;
-      this.game1ScoreA = 0;
-      this.game1ScoreB = 0;
-      this.game2ScoreA = 0;
-      this.game2ScoreB = 0;
-      this.tieScoreA = 0;
-      this.tieScoreB = 0;
-      this.mainSwitch = false;
-    },
-    async submitScores() {
-      // 1. Handle main switch (swap scores if toggled)
-      const [set1A, set1B] = this.mainSwitch
-        ? [this.game1ScoreB, this.game1ScoreA]
-        : [this.game1ScoreA, this.game1ScoreB];
-      const [set2A, set2B] = this.mainSwitch
-        ? [this.game2ScoreB, this.game2ScoreA]
-        : [this.game2ScoreA, this.game2ScoreB];
-      const [tieA, tieB] = this.mainSwitch
-        ? [this.tieScoreB, this.tieScoreA]
-        : [this.tieScoreA, this.tieScoreB];
-
-      // 2. Update the grid UI with mirrored scores
-      if (this.selectedRow !== -1 && this.selectedCol !== -1) {
-        const g1 = `${set1A} - ${set1B}`;
-        const g2 = `${set2A} - ${set2B}`;
-        const tie = `${tieA} - ${tieB}`;
-        this.gridScores[this.selectedRow][this.selectedCol] = `${g1}\n${g2}\n${tie}`;
-
-        // Mirror to opposite cell if not diagonal
-        if (this.selectedRow !== this.selectedCol) {
-          const revG1 = `${set1B} - ${set1A}`;
-          const revG2 = `${set2B} - ${set2A}`;
-          const revTie = `${tieB} - ${tieA}`;
-          this.gridScores[this.selectedCol][this.selectedRow] = `${revG1}\n${revG2}\n${revTie}`;
-        }
-      }
-
-      // 3. Validate player IDs (FIXED: use p1_id, p2_id, <= 0)
-      const p1_id = Number(this.selectedPlayer1?.id);
-      const p2_id = Number(this.selectedPlayer2?.id);
-      if (!Number.isInteger(p1_id) || !Number.isInteger(p2_id) || p1_id <= 0 || p2_id <= 0) {
-        alert('Errore: gli ID dei giocatori non sono validi.');
-        this.closeModal();
-        return;
-      }
-
-      // 4. Build payload with EXACT snake_case keys (FIXED)
-      const payload = {
-        p1Id: p1_id,
-        p2Id: p2_id,
-        set1: [set1A, set1B],
-        set2: [set2A, set2B],
-        tie: [tieA, tieB]
-      };
-
-      alert('Sending to Rust:', JSON.stringify(payload, null, 2)); // Debug
-
-      // 5. Call Tauri command
-      try {
-        await invoke('save_match_result', payload);
-      } catch (error) {
-        console.error('Tauri invoke failed:', error);
-      } finally {
-        this.closeModal();
-      }
-    },
-    handlePlayerClick(index) {
-      if (this.swapMode && !this.anyModalOpen) {
-        const player = this.players[index];
-        this.$emit('player-selected', {
-          id: player.id ?? null,
-          name: player.name ?? `Giocatore ${index + 1}`
-        });
-      }
-    }
-  }
-};
-</script>
 
 <style scoped>
 .group-container {

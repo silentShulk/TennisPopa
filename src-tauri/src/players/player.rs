@@ -1,4 +1,4 @@
-use crate::players::{ Availability, Category, Size};
+use crate::players::{ Availability, Category, Size, player};
 use rusqlite_struct::rusqlite_struct_helper::RusqliteStructHelper;
 use rusqlite_struct_derive::RusqliteStruct;
 use serde::{Deserialize, Serialize};
@@ -53,7 +53,7 @@ pub fn update_spec_player(update_player: Player){
 
     let players_conn = Connection::open(get_resource("databases/players.db")).unwrap();
     //let players_conn = Connection::open("databases/players.db").unwrap();
-    
+
     players_conn.execute(
             "INSERT INTO Player (name, email, phone_number, category, date_of_creation, availability, size, id_group)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
@@ -66,7 +66,7 @@ pub fn update_spec_player(update_player: Player){
                 size = excluded.size,
                 id_group = excluded.id_group;",
         params![update_player.name, update_player.email, update_player.phone_number, update_player.category, update_player.date_of_creation, update_player.availability, update_player.size, update_player.id_group],
-    ).unwrap();   
+    ).unwrap();
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, RusqliteStruct)]

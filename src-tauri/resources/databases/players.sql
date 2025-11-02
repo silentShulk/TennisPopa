@@ -33,6 +33,19 @@ CREATE TABLE ScheduledMatch(
     CHECK (player_1 <> player_2)
 );
 
+CREATE TABLE UnscheduledMatch(
+    player_1 INTEGER,
+    player_2 INTEGER,
+    category INTEGER,
+
+    PRIMARY KEY (player_1, player_2),
+    FOREIGN KEY (player_1) REFERENCES Player(id),
+    FOREIGN KEY (player_2) REFERENCES Player(id),
+
+    CHECK (player_1 < player_2),
+    CHECK (player_1 <> player_2)
+);
+
 CREATE TABLE PlayerMatch (
     player_1 INTEGER,
     player_2 INTEGER,

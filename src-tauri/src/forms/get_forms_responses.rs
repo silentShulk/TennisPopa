@@ -1,5 +1,6 @@
 use std::{collections::HashMap, error::Error, vec};
 use chrono::{DateTime, Utc};
+
 use yup_oauth2::{read_application_secret, AccessToken, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 use reqwest::Client;
 use rusqlite::{params, Connection, Result};
@@ -10,7 +11,8 @@ use serde_json::Value;
 
 use crate::get_resource;
 use crate::forms::forms_info::FormType;
-use crate::players::{Availability, Player};
+use crate::players::{Availability, Player, Category};
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, RusqliteStruct)]
 pub struct RegistrationFormItems {
@@ -133,7 +135,6 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
 
     // Push into DB
     let players_conn = Connection::open(get_resource("databases/players.db")).unwrap();
-    //let players_conn = Connection::open("databases/players.db").unwrap();
     for pr in player_registrations.iter() {
         players_conn.execute(
             "INSERT INTO Player (name, email, phone_number, category, date_of_creation, size, id_group)
@@ -148,9 +149,13 @@ async fn save_registration_responses(client: &Client, token: &AccessToken) -> Re
             params![pr.name, pr.email, pr.phone_number, pr.category, pr.date_of_creation, pr.size, pr.id_group],
         ).unwrap();
     }
+    
+    players_conn.execute("DELETE FROM PlayerGroup;", []).unwrap();
+    players_conn.execute("DELETE FROM PlayerMatch;", []).unwrap();
+    players_conn.execute("DELETE FROM ScheduledMatch;", []).unwrap();
+    players_conn.execute("DELETE FROM UnscheduledMatch;", []).unwrap();
 
-    Ok(())
-     
+    Ok(())     
 }
 
 /// IMPORTANT!
@@ -244,7 +249,6 @@ async fn save_availability_responses(client: &Client, token: &AccessToken) -> Re
     // Then set the availabilities gotten from form for those who sent it.
     // -------------------------------------------------------------------
     let players_conn = Connection::open(get_resource("databases/players.db")).unwrap();
-    //let players_conn = Connection::open("databases/players.db")?;
     players_conn.execute("UPDATE Player SET availability = ?1", [Availability::all()])?;
 
     for tp in time_preferences.iter() {

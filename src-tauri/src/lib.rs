@@ -12,11 +12,12 @@ use forms::create_forms::create_form;
 use forms::forms_info::*;
 use forms::get_forms_responses::main_get_forms_responses;
 use crate::groups::group::{create_groups, groups_in_category, swap_group_for_players};
-use crate::groups::group_scheduler::{get_all_scheduled_matches, schedule_matches_for_all_players};
+use crate::groups::group_scheduler::{get_all_player_matches, get_all_scheduled_matches, schedule_matches_for_all_players};
 use crate::groups::courts::save_availability_court;
 use crate::groups::*;
 use crate::players::match_excel::create_matches_excel;
 use crate::players::player::*;
+use crate::players::unscheduled_matches_excel::unscheduled_matches_excel;
 
 static RESOURCE_DIR: Lazy<Mutex<Option<PathBuf>>> = Lazy::new(|| Mutex::new(None));
 fn init_resource_dir(app: &tauri::App) -> Result<(), String> {
@@ -64,7 +65,9 @@ pub fn run() {
                                                 swap_group_for_players,
                                                 schedule_matches_for_all_players,
                                                 get_all_scheduled_matches,
-                                                create_matches_excel])
+                                                create_matches_excel,
+                                                get_all_player_matches,
+                                                unscheduled_matches_excel])
         .run(tauri::generate_context!())
         .expect("Error while running tauri application");
 }

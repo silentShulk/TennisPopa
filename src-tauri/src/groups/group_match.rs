@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use rusqlite::{params, Connection, Result};
 
+
 use crate::get_resource;
 use crate::players::{Availability, Category, Player, Size};
 use crate::group::Group;
@@ -13,101 +14,6 @@ pub struct GroupMatch {
     pub category: Category
 }
 
-#[tauri::command]
-pub fn test_matching() {
-
-    // 0: SatAft, 1: SunMor, 2: SunAft, 3: SunAft, 4: SatAft, 5: SunMor, 6: SatAft
-    // 0 e 6 hanno già giocato
-    let group = Group {
-        category: Category::A1,
-        players: vec![
-            Player {
-                id: Some(0),
-                name: "a".into(),
-                email: "a".into(),
-                phone_number: "a".into(),
-                category: Category::A1,
-                date_of_creation: "a".into(),
-                availability: Availability::SatAft,
-                size: Size::XL,
-                id_group: None,
-            },
-            Player {
-                id: Some(1),
-                name: "a".into(),
-                email: "a".into(),
-                phone_number: "a".into(),
-                category: Category::A1,
-                date_of_creation: "a".into(),
-                availability: Availability::SunMor,
-                size: Size::XL,
-                id_group: None,
-            },
-            Player {
-                id: Some(2),
-                name: "a".into(),
-                email: "a".into(),
-                phone_number: "a".into(),
-                category: Category::A1,
-                date_of_creation: "a".into(),
-                availability: Availability::SunAft,
-                size: Size::XL,
-                id_group: None,
-            },
-            Player {
-                id: Some(3),
-                name: "a".into(),
-                email: "a".into(),
-                phone_number: "a".into(),
-                category: Category::A1,
-                date_of_creation: "a".into(),
-                availability: Availability::SunAft,
-                size: Size::XL,
-                id_group: None,
-            },
-            Player {
-                id: Some(4),
-                name: "a".into(),
-                email: "a".into(),
-                phone_number: "a".into(),
-                category: Category::A1,
-                date_of_creation: "a".into(),
-                availability: Availability::SatAft,
-                size: Size::XL,
-                id_group: None,
-            },
-            Player {
-                id: Some(5),
-                name: "a".into(),
-                email: "a".into(),
-                phone_number: "a".into(),
-                category: Category::A1,
-                date_of_creation: "a".into(),
-                availability: Availability::SunMor,
-                size: Size::XL,
-                id_group: None,
-            },
-            Player {
-                id: Some(6),
-                name: "a".into(),
-                email: "a".into(),
-                phone_number: "a".into(),
-                category: Category::A1,
-                date_of_creation: "a".into(),
-                availability: Availability::SatAft,
-                size: Size::XL,
-                id_group: None,
-            },
-        ]
-    };
-
-
-    let m = group.create_matches();
-    for ma in m {
-        println!("({},{})", ma.p1.id.unwrap(), ma.p2.id.unwrap());
-    }
-
-}
 impl Group {
     fn is_available(&self, p: &(i32, i32), conn: &Connection) -> bool {
         let mut p1_id = self.players[p.0 as usize].id.unwrap();

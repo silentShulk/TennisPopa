@@ -167,7 +167,7 @@ function cancelAction() {
               @click="proceedToSecond"
               class="btn-proceed"
             >
-              Proceed
+              Procedi
             </button>
             <button
               v-else

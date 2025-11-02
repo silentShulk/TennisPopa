@@ -45,6 +45,11 @@ impl Category {
         [E, D, C, B1, B2, A1, A2]
     }
 
+    pub fn all_playable_categoriesesesee() -> [Category; 8] {
+        use Category::*;
+        [Sconosciuta, E, D, C, B1, B2, A1, A2]
+    }
+
     pub fn to_string(&self) -> String {
         match self {
             Category::E => "E".to_string(),

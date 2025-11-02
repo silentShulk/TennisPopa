@@ -16,6 +16,13 @@ struct ScheduledMatch {
     court: i32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, RusqliteStruct)]
+pub struct UnscheduledMatch {
+    pub player_1: i32,
+    pub player_2: i32,
+    pub category: Category
+}
+
 struct GroupScheduler();
 
 impl GroupScheduler {
@@ -38,7 +45,9 @@ impl GroupScheduler {
         let mut court_availability: Vec<i32> = vec![
             courts.c1, courts.c2, courts.c3, courts.c4, courts.c6, courts.cg1, courts.cg2
         ];
+
         let mut scheduled_matches: Vec<ScheduledMatch> = vec![];
+        let mut unscheduled_matches: Vec<UnscheduledMatch> = vec![];
     
         for gm in all_matches {
             let match_availability = (gm.p1.availability & gm.p2.availability).bits();
@@ -49,8 +58,11 @@ impl GroupScheduler {
 
             let mut order = vec![0, 1, 2, 3, 5, 6];
             if gm.category == Category::E || gm.category == Category::D {
-                order = vec![4, 0, 1, 2, 3, 5, 6];
+                order = vec![4];
             }
+
+            let mut scheduled = false;
+
             for i in order {
                 let combined = court_availability[i] & match_availability_expanded;
                 if combined == 0 {
@@ -70,7 +82,13 @@ impl GroupScheduler {
                 scheduled_matches.push(ScheduledMatch {
                      player_1: gm.p1.id.unwrap(), player_2: gm.p2.id.unwrap(), scheduled_time: first_available, court: i as i32
                 }); 
+
+                scheduled = true;
+
                 break;
+            }
+            if !scheduled{
+                unscheduled_matches.push(UnscheduledMatch { player_1: gm.p1.id.unwrap(), player_2: gm.p2.id.unwrap(), category: gm.category });
             }
         }
 
@@ -86,10 +104,15 @@ impl GroupScheduler {
         }*/
 
         let conn = Connection::open(get_resource("databases/players.db")).unwrap();
+        conn.execute("DELETE FROM UnscheduledMatch;", []).unwrap();
         conn.execute("DELETE FROM ScheduledMatch;", []).unwrap();
 
         for sm in scheduled_matches {
             conn.insert_into_table_struct(&sm).unwrap();
+        }
+
+        for um in unscheduled_matches{
+            conn.insert_into_table_struct(&um).unwrap();
         }
     }
 
@@ -151,16 +174,44 @@ pub fn get_all_scheduled_matches() -> Vec<ScheduleMatchFrontend>{
     return res;
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UnscheduleMatchFrontend {
+    pub player_1: Player,
+    pub player_2: Player,
+    pub category: Category
+}
+
+pub fn get_all_unscheduled_matches() -> Vec<UnscheduleMatchFrontend>{
+    let conn = Connection::open(get_resource("databases/players.db")).unwrap();
+    let scheduled_matches = conn.get_from_table_struct::<UnscheduledMatch>().unwrap();
+    let players = conn.get_from_table_struct::<Player>().unwrap();
+
+    let mut res: Vec<UnscheduleMatchFrontend> = vec![];
+
+    for sm in scheduled_matches.iter(){
+        let player1 = players.iter().find(|p|p.id.unwrap() == sm.player_1);
+        let player2 = players.iter().find(|p|p.id.unwrap() == sm.player_2);
+
+        res.push(UnscheduleMatchFrontend { player_1: player1.unwrap().clone(), player_2: player2.unwrap().clone(), category: sm.category });
+    }
+
+    for i in res.iter(){
+        println!("{:?}-{:?} c:{:?}", i.player_1.name, i.player_2.name, i.category);
+    }
+
+    return res;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize, RusqliteStruct)]
-struct PlayerMatch{
-    player_1: i32,
-    player_2: i32,
-    set_1_p1: i32,
-    set_1_p2: i32,
-    set_2_p1: i32,
-    set_2_p2: i32,
-    tie_p1: i32,
-    tie_p2: i32,
+pub struct PlayerMatch{
+    pub player_1: i32,
+    pub player_2: i32,
+    pub set_1_p1: i32,
+    pub set_1_p2: i32,
+    pub set_2_p1: i32,
+    pub set_2_p2: i32,
+    pub tie_p1: i32,
+    pub tie_p2: i32,
 }
 
 #[tauri::command]

@@ -264,6 +264,7 @@ const cancelEditing = () => {
 }
 
 const saveChanges = async () => {
+  
   try {
     if (!editedPlayer.value.name || editedPlayer.value.name.trim() === '') {
       alert('Il nome non può essere vuoto')
@@ -284,7 +285,7 @@ const saveChanges = async () => {
   } catch (error) {
     handleSaveError(error)
   }
-
+  
   // DEBUG _______________________________________________
   const handleSaveError = (error) => {
   let errorMessage = 'Errore nel salvataggio delle modifiche'
