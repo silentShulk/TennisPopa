@@ -63,16 +63,22 @@ function clampToSeven(this: any, event: Event, property: string) {
 function handleClick(event: MouseEvent) {
   if (isVisible.value || props.anyModalOpen || props.swapMode) return;
   const target = event.target as HTMLElement;
-  if (target.classList.contains('cell') && !target.classList.contains('diagonal') && !target.classList.contains('scored')) {
+  if (target.classList.contains('cell') && !target.classList.contains('diagonal')) {
     const row = parseInt(target.dataset.row!);
     const col = parseInt(target.dataset.col!);
-    if (gridScores.value[row][col] !== '') return;
 
     selectedRow.value = row;
     selectedCol.value = col;
     selectedPlayer1.value = props.players[row];
     selectedPlayer2.value = props.players[col];
-    resetScores();
+
+    const existingScore = gridScores.value[row][col];
+    if (existingScore) {
+      parseExistingScore(existingScore);
+    } else {
+      resetScores();
+    }
+
     isVisible.value = true;
     emit('modal-opened');
   }
@@ -86,6 +92,53 @@ function resetScores() {
   tieScoreA.value = 0;
   tieScoreB.value = 0;
   mainSwitch.value = false;
+}
+
+// --- NUOVA FUNZIONE: Precompila i campi dal punteggio esistente ---
+function parseExistingScore(scoreStr: string) {
+  resetScores();
+
+  const lines = scoreStr.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+
+  let set1A = 0, set1B = 0, set2A = 0, set2B = 0, tieA = 0, tieB = 0;
+
+  // Game 1
+  if (lines[0]) {
+    [set1A, set1B] = lines[0].split('-').map(s => parseInt(s.trim()) || 0);
+  }
+  // Game 2
+  if (lines.length > 1 && lines[1]) {
+    [set2A, set2B] = lines[1].split('-').map(s => parseInt(s.trim()) || 0);
+  }
+  // Tie-break
+  if (lines.length > 2 && lines[2]) {
+    [tieA, tieB] = lines[2].split('-').map(s => parseInt(s.trim()) || 0);
+  }
+
+  // Determina se è stato usato lo switch:
+  // Se il giocatore 1 ha perso il primo set → probabilmente è stato swappato
+  const p1WonSet1 = set1A > set1B;
+  const p1WonSet2 = set2A > set2B;
+
+  if (!p1WonSet1 || (set2A === 0 && set2B === 0 && tieA > 0)) {
+    // Probabilmente swappato: inverti i valori
+    mainSwitch.value = true;
+    game1ScoreA.value = set1B;
+    game1ScoreB.value = set1A;
+    game2ScoreA.value = set2B;
+    game2ScoreB.value = set2A;
+    tieScoreA.value = tieB;
+    tieScoreB.value = tieA;
+  } else {
+    mainSwitch.value = false;
+    game1ScoreA.value = set1A;
+    game1ScoreB.value = set1B;
+    game2ScoreA.value = set2A;
+    game2ScoreB.value = set2B;
+    tieScoreA.value = tieA;
+    tieScoreB.value = tieB;
+  }
 }
 
 function closeModal() {
@@ -143,7 +196,7 @@ async function submitScores() {
 
   try {
     await invoke('save_match_result', payload);
-    emit('match-saved'); // Ricarica le partite
+    emit('match-saved');
   } catch (error) {
     console.error('Errore salvataggio:', error);
   } finally {
@@ -208,13 +261,10 @@ watch(
       @click="handleClick"
       :class="{ disabled: isVisible || anyModalOpen }"
     >
-      <!-- Righe giocatore + celle (invariato) -->
-      <!-- ... (tutto il tuo HTML precedente) ... -->
-      <!-- Usa v-for per rendere più pulito -->
       <template v-for="row in 4" :key="row - 1">
         <p
           class="name"
-          :class="{ 'player-selected': props.players[row - 1]?.id === props.selectedPlayer1Id || props.players[row - 1]?.id === props.selectedPlayer2Id}"
+          :class="{ 'player-selected': props.players[row - 1]?.id === props.selectedPlayer1Id || props.players[row - 1]?.id === props.selectedPlayer2Id }"
           @click.stop="handlePlayerClick(row - 1)"
         >
           {{ props.players[row - 1]?.name || 'Nome ' + row }}
@@ -232,7 +282,7 @@ watch(
       </template>
     </div>
 
-    <!-- Modal (invariato) -->
+    <!-- Modal -->
     <Teleport to="body">
       <div v-if="isVisible" class="modal">
         <div class="modal-content">
@@ -333,7 +383,7 @@ watch(
   font-size: 0.7rem;
   line-height: 1.1;
 }
-.cell:hover:not(.diagonal):not(.scored) {
+.cell:hover:not(.diagonal) {
   background-color: rgba(79, 172, 254, 0.15);
   transform: scale(1.05);
 }
@@ -351,16 +401,21 @@ watch(
   pointer-events: none;
 }
 .scored {
-  background: #b6b5b5;
-  border: 1px solid #dee2e6;
-  cursor: default;
-  pointer-events: none;
+  background: #d4edda; /* Verde chiaro per "compilato ma modificabile" */
+  border: 1px solid #c3e6cb;
+  cursor: pointer;
+}
+.scored:hover {
+  background: rgba(79, 172, 254, 0.25) !important;
+  transform: scale(1.02);
 }
 .disabled {
   pointer-events: none;
   opacity: 0.5;
   filter: blur(1px);
 }
+
+/* Modal styles (invariati) */
 .modal {
   position: fixed;
   top: 0;
@@ -512,6 +567,7 @@ input:checked + .switch-slider:before {
 .modal-buttons button:hover {
   transform: scale(1.05);
 }
+
 @media (max-width: 600px) {
   .group {
     grid-template-columns: 100px repeat(4, 45px);

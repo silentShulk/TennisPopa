@@ -1,14 +1,23 @@
 <template>
   <div class="search-container">
     <div class="search-input-wrapper">
-      <input
-        type="text"
-        v-model="searchText"
-        @input="handleSearch"
-        placeholder="Cerca giocatore per nome..."
-        class="search-input"
-      />
-      <div v-if="loading" class="loading">Ricerca in corso...</div>
+      
+      <div class="excel-button-container">
+        <button @click="create_excel" class="excel-btn">
+          Crea excel per anagrafiche
+        </button>
+      </div>
+
+      <div class="input-with-loading">
+        <input
+          type="text"
+          v-model="searchText"
+          @input="handleSearch"
+          placeholder="Cerca giocatore per nome..."
+          class="search-input"
+        />
+        <div v-if="loading" class="loading-text">Ricerca in corso...</div>
+      </div>
     </div>
 
     <div v-if="displayedResults.length > 0" class="results-container">
@@ -140,6 +149,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { save } from '@tauri-apps/plugin-dialog';
 
 const searchText = ref('')
 const searchResults = ref([])
@@ -163,6 +173,21 @@ const displayedResults = computed(() => {
   return searchResults.value.slice(0, maxResults.value)
 })
 
+async function create_excel() {
+  try {
+    const filePath = await save({
+      filters: [{ name: 'File Excel', extensions: ['xlsx'] }],
+      defaultPath: 'anagrafiche.xlsx',
+    });
+    if (filePath) {
+      await invoke('create_excel_for_player', { path: filePath });
+      alert('File Excel creato con successo!');
+    }
+  } catch (error) {
+    alert('Errore durante la creazione del file Excel: ' + error);
+    console.error('Errore:', error);
+  }
+}
 
 const getSizeText = (sizeNumber) => {
   switch (sizeNumber) {
@@ -395,13 +420,39 @@ const saveChanges = async () => {
   border-color: #007acc;
 }
 
-.loading {
+.input-with-loading {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 50px 12px 16px; /* padding destro per il testo loading */
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+/* Testo "Ricerca in corso..." dentro l'input */
+.loading-text {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #666;
   font-size: 14px;
+  pointer-events: none;
+  white-space: nowrap;
+  background: white;
+  padding-left: 8px;
 }
 
 /* Risultati */
@@ -600,5 +651,52 @@ const saveChanges = async () => {
 /* Stili per la modalità modifica */
 .view-mode, .edit-mode {
   width: 100%;
+}
+
+.excel-button-container {
+  background: white;
+  padding: 0.75rem 1rem;
+  border-radius: 15px; /* angoli smussati */
+  display: inline-block;
+  margin: 1.5rem 0; /* spazio sopra e sotto */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.excel-button-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+/* === BOTTONE CON GRADIENT (interno) === */
+.excel-btn {
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.8rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.excel-btn:hover {
+  background: linear-gradient(135deg, #66b6ff 0%, #00c4cc 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.excel-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.excel-btn:focus {
+  outline: none;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 0 0 3px rgba(79, 172, 254, 0.4);
 }
 </style>

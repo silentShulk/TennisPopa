@@ -21,11 +21,42 @@ interface PlayerMatch {
 const route = useRoute();
 const category = ref('');
 const groups = ref<any[]>([]);
-const allMatches = ref<PlayerMatch[]>([]); // <-- Tipo corretto
+const allMatches = ref<PlayerMatch[]>([]);
 const anyModalOpen = ref(false);
 const swapMode = ref(false);
 const selectedPlayer1Id = ref<number | null>(null);
 const selectedPlayer2Id = ref<number | null>(null);
+
+// --- MODAL DI CONFERMA ---
+const showConfirmModal = ref(false);
+const confirmAction = ref<(() => Promise<void>) | null>(null);
+const confirmTitle = ref('');
+const confirmMessage = ref('');
+
+function openConfirmModal(
+  title: string,
+  message: string,
+  action: () => Promise<void>
+) {
+  confirmTitle.value = title;
+  confirmMessage.value = message;
+  confirmAction.value = action;
+  showConfirmModal.value = true;
+  anyModalOpen.value = true;
+}
+
+function closeConfirmModal() {
+  showConfirmModal.value = false;
+  confirmAction.value = null;
+  anyModalOpen.value = false;
+}
+
+async function executeConfirmAction() {
+  if (confirmAction.value) {
+    await confirmAction.value();
+  }
+  closeConfirmModal();
+}
 
 // --- FUNZIONI ---
 async function selectedCategory() {
@@ -39,10 +70,8 @@ async function selectedCategory() {
     const result = await invoke('groups_in_category', { category: categoryInt });
     groups.value = Array.isArray(result) ? result : [];
 
-    // Carica tutte le partite
     await loadAllMatches();
 
-    // Reset swap
     swapMode.value = false;
     selectedPlayer1Id.value = null;
     selectedPlayer2Id.value = null;
@@ -81,12 +110,22 @@ async function create_excel() {
   }
 }
 
+// --- CREA GIRONI CON MODAL DI CONFERMA ---
 async function create_groups() {
-  try {
-    await invoke('create_groups', {});
-  } catch (error) {
-    console.error('Errore creazione gruppi:', error);
-  }
+  openConfirmModal(
+    'Creare i gironi?',
+    'Questa azione rimescolerà tutti i giocatori e creerà nuovi gruppi da 4.\n\nI gruppi esistenti verranno sovrascritti.',
+    async () => {
+      try {
+        await invoke('create_groups', {});
+        alert('Gironi creati con successo!');
+        await selectedCategory();
+      } catch (error) {
+        console.error('Errore creazione gruppi:', error);
+        alert('Errore durante la creazione dei gironi: ' + error);
+      }
+    }
+  );
 }
 
 function toggleSwapMode() {
@@ -109,7 +148,7 @@ async function handlePlayerSelection(player: { id: number | null; name: string }
         p2Id: selectedPlayer2Id.value
       });
       alert('Giocatori swappati!');
-      await selectedCategory(); // Ricarica
+      await selectedCategory();
     } catch (error) {
       alert('Errore swap: ' + error);
     } finally {
@@ -154,6 +193,7 @@ watch(anyModalOpen, (isOpen) => {
 watch(() => route.path, (newPath) => {
   if (newPath !== '/Groups' && anyModalOpen.value) {
     anyModalOpen.value = false;
+    showConfirmModal.value = false;
   }
 });
 
@@ -172,6 +212,7 @@ onUnmounted(() => {
   swapMode.value = false;
   selectedPlayer1Id.value = null;
   selectedPlayer2Id.value = null;
+  showConfirmModal.value = false;
 });
 </script>
 
@@ -194,9 +235,11 @@ onUnmounted(() => {
           <option :value="2">D</option>
           <option :value="1">E</option>
         </select>
-        <button @click="create_groups">Crea gironi</button>
-        <button @click="create_excel">Crea excel</button>
-        <button :class="{ 'swap-active': swapMode }" @click="toggleSwapMode">
+        <button @click="create_groups" :disabled="swapMode || anyModalOpen">
+          Crea gironi
+        </button>
+        <button @click="create_excel" :disabled="anyModalOpen">Crea excel</button>
+        <button :class="{ 'swap-active': swapMode }" @click="toggleSwapMode" :disabled="anyModalOpen">
           {{ swapMode ? 'Disattiva Swap' : 'Attiva Swap' }}
         </button>
       </div>
@@ -238,6 +281,24 @@ onUnmounted(() => {
         </li>
       </ul>
     </div>
+
+    <!-- MODAL DI CONFERMA PERSONALIZZATO -->
+    <Teleport to="body">
+      <div v-if="showConfirmModal" class="confirm-modal-overlay" @click="closeConfirmModal">
+        <div class="confirm-modal" @click.stop>
+          <div class="confirm-header">
+            <h3>{{ confirmTitle }}</h3>
+          </div>
+          <div class="confirm-body">
+            <p>{{ confirmMessage }}</p>
+          </div>
+          <div class="confirm-footer">
+            <button class="btn-cancel" @click="closeConfirmModal">Annulla</button>
+            <button class="btn-confirm" @click="executeConfirmAction">Conferma</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -254,7 +315,8 @@ onUnmounted(() => {
 }
 
 :global(.main-content.modal-open) {
-  filter: blur(2px);
+  filter: blur(4px);
+  pointer-events: none;
 }
 
 .page-container {
@@ -278,12 +340,6 @@ onUnmounted(() => {
   font-size: 2.8rem;
   font-weight: 300;
   letter-spacing: -0.5px;
-}
-
-.page-header p {
-  color: #7f8c8d;
-  font-size: 1.1rem;
-  margin: 0;
 }
 
 .category-section {
@@ -371,7 +427,6 @@ onUnmounted(() => {
   transform: translateY(-4px);
 }
 
-/* New incomplete players list styling */
 .incomplete-section {
   max-width: 800px;
   margin: 2rem auto;
@@ -407,6 +462,162 @@ onUnmounted(() => {
   border-bottom: none;
 }
 
+button {
+  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #66b6ff 0%, #00c4cc 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
+}
+
+.swap-active {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+}
+
+.swap-active:hover {
+  background: linear-gradient(135deg, #ff8787, #ffa270);
+}
+
+.player-selected {
+  background: rgba(79, 172, 254, 0.3);
+  border-radius: 5px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.player-item {
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.player-item:hover {
+  background: rgba(79, 172, 254, 0.15);
+}
+
+/* === MODAL DI CONFERMA PERSONALIZZATO === */
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(44, 62, 80, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.confirm-modal {
+  background: white;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 90%;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+.confirm-header {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: white;
+  padding: 1rem 1.5rem;
+  text-align: center;
+}
+
+.confirm-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.confirm-body {
+  padding: 1.5rem;
+  color: #2c3e50;
+  line-height: 1.6;
+  white-space: pre-line;
+  text-align: center;
+}
+
+.confirm-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+  justify-content: center;
+}
+
+.btn-cancel {
+  background: #e9ecef;
+  color: #495057;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #dee2e6;
+  transform: translateY(-1px);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #399a00, #00c251);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #87ff89, #ffa270);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 @media (max-width: 768px) {
   .category-section {
     padding: 1rem;
@@ -428,65 +639,23 @@ onUnmounted(() => {
   .page-header h1 {
     font-size: 2.2rem;
   }
-}
 
-button {
-  background: linear-gradient(135deg, #4facfe 0%, #00acb5 100%);
-  color: white;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-}
-
-button:hover {
-  background: linear-gradient(135deg, #66b6ff 0%, #00c4cc 100%);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  transform: translateY(-2px);
-}
-
-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
-}
-
-.swap-active {
-  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
-}
-
-.swap-active:hover {
-  background: linear-gradient(135deg, #ff8787, #ffa270);
-}
-
-/* Stile per i giocatori selezionati */
-.player-selected {
-  background: rgba(79, 172, 254, 0.3);
-  border-radius: 5px;
-  padding: 0.5rem;
-  cursor: pointer;
-}
-
-/* Stile per gli elementi della lista dei giocatori */
-.player-item {
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.player-item:hover {
-  background: rgba(79, 172, 254, 0.15);
+  .confirm-modal {
+    width: 90%;
+  }
 }
 
 @media (max-width: 480px) {
   .groups-section {
     padding: 0 1rem 1rem;
+  }
+
+  .confirm-footer {
+    flex-direction: column;
+  }
+
+  .btn-cancel, .btn-confirm {
+    width: 100%;
   }
 }
 </style>
