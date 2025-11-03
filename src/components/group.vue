@@ -119,7 +119,7 @@ function parseExistingScore(scoreStr: string) {
   // Determina se è stato usato lo switch:
   // Se il giocatore 1 ha perso il primo set → probabilmente è stato swappato
   const p1WonSet1 = set1A > set1B;
-  const p1WonSet2 = set2A > set2B;
+  //const p1WonSet2 = set2A > set2B;
 
   if (!p1WonSet1 || (set2A === 0 && set2B === 0 && tieA > 0)) {
     // Probabilmente swappato: inverti i valori

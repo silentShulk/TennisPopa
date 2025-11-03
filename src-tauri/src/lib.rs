@@ -68,7 +68,8 @@ pub fn run() {
                                                 get_all_scheduled_matches,
                                                 create_matches_excel,
                                                 get_all_player_matches,
-                                                create_excel_for_player])
+                                                create_excel_for_player,
+                                                unscheduled_matches_excel])
         .run(tauri::generate_context!())
         .expect("Error while running tauri application");
 }
