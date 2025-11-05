@@ -190,11 +190,11 @@ pub fn create_matches_excel(path: String){
             let name_p2 = shorten_name(matche.player_2.name.clone());
 
             if row % 2 == 1{
-                file.write_with_format(row, col - 1, format!("{} \n {}", name_p1, name_p2), &normal_text_format_white).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_white).expect("Error to write in the file");
                 file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_white).expect("Error to write in the file");
             }
             else{
-                file.write_with_format(row, col - 1, format!("{} \n {}", name_p1, name_p2), &normal_text_format_light_gray).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_light_gray).expect("Error to write in the file");
                 file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_light_gray).expect("Error to write in the file");
             }
             
@@ -291,23 +291,6 @@ pub fn create_matches_excel(path: String){
     let saturday_start_row = 5;
     let sunday_start_row = 33;
 
-    for matche in g1_matches.iter(){
-        
-        if let Some((row, col)) = get_match_position(matche, saturday_start_row, sunday_start_row){
-
-            if row % 2 == 1{
-                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name, matche.player_2.name), &normal_text_format_white).expect("Error to write in the file");
-                file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_white).expect("Error to write in the file");
-            }
-            else{
-                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name, matche.player_2.name), &normal_text_format_light_gray).expect("Error to write in the file");
-                file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_light_gray).expect("Error to write in the file");
-            }
-            
-        }
-
-    }
-
     for matche in circolo_matches.iter(){
         
         if let Some((row, col)) = get_match_position(matche, saturday_start_row, sunday_start_row){
@@ -316,11 +299,11 @@ pub fn create_matches_excel(path: String){
             let name_p2 = shorten_name(matche.player_2.name.clone());
 
             if row % 2 == 1{
-                file.write_with_format(row, col - 1, format!("{} \n {}", name_p1, name_p2), &normal_text_format_white).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_white).expect("Error to write in the file");
                 file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_white).expect("Error to write in the file");
             }
             else{
-                file.write_with_format(row, col - 1, format!("{} \n {}", name_p1, name_p2), &normal_text_format_light_gray).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_light_gray).expect("Error to write in the file");
                 file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_light_gray).expect("Error to write in the file");
             }
             
