@@ -46,7 +46,7 @@ pub fn create_matches_excel(path: String){
 
     let h1_format = Format::new()
         .set_bold()
-        .set_font_size(16)
+        .set_font_size(20)
         .set_font_name("Aptos Narrow")
         .set_font_color(Color::Blue);
 
@@ -79,7 +79,8 @@ pub fn create_matches_excel(path: String){
         .set_align(FormatAlign::VerticalCenter)
         .set_font_name("Aptos Narrow")
         .set_border(FormatBorder::Thin)
-        .set_align(FormatAlign::Center);
+        .set_align(FormatAlign::Center)
+        .set_font_size(9);
 
     let normal_text_format_light_gray = Format::new()
         .set_bold()
@@ -88,7 +89,8 @@ pub fn create_matches_excel(path: String){
         .set_font_name("Aptos Narrow")
         .set_background_color(Color::RGB(0xd0d0d0 as u32))
         .set_border(FormatBorder::Thin)
-        .set_align(FormatAlign::Center);
+        .set_align(FormatAlign::Center)
+        .set_font_size(9);
 
 
     let mut files_excel = Workbook::new();
@@ -101,18 +103,23 @@ pub fn create_matches_excel(path: String){
 
     let file = files_excel.add_worksheet().set_name("G1").expect("Error in creation file");
 
-    file.write_with_format(row_bias, 2, format!("Sabato: {} - G1", saturday), &h1_format).expect("Error to write in the file");
+    file.set_landscape();
+    file.set_margins(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    file.set_paper_size(9);
+    
+
+    file.write_with_format(row_bias, 1, format!("Sabato: {} - G1", saturday), &h1_format).expect("Error to write in the file");
 
     row_bias +=2;
 
     for i in 0..2{
-        file.write_with_format(row_bias, 1 +(i * 3), "ORA", &header_table_format).expect("Error to write in the file");
-        file.write_with_format(row_bias, 2 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
-        file.write_with_format(row_bias, 3 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, i * 3, "ORA", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, 1 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, 2 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
 
-        file.set_column_width(1 + (i * 3), 8).expect("Error to write in the file");
-        file.set_column_width(2 + (i * 3), 20).expect("Error to write in the file");
-        file.set_column_width(3 + (i * 3), 8).expect("Error to write in the file");
+        file.set_column_width(i * 3, 6).expect("Error to write in the file");
+        file.set_column_width(1 + (i * 3), 15).expect("Error to write in the file");
+        file.set_column_width(2 + (i * 3), 4).expect("Error to write in the file");
     }
     row_bias += 1;
 
@@ -122,21 +129,21 @@ pub fn create_matches_excel(path: String){
             file.set_row_height(i as u32 + row_bias, 35).expect("Error to write in the file");
 
             if y == 0 && i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, saturday_time[i].clone(), &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, saturday_time[i].clone(), &white_line_format).expect("Error to write in the file");
             }
             else if y == 0 && i%2 != 0{
-                file.write_with_format(row_bias + i as u32, y + 1, saturday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, saturday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
             }
             else if y == 3 && i%2 == 0 {
-                file.write_with_format(row_bias + i as u32, y + 1, saturday_time[i].clone(), &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, saturday_time[i].clone(), &white_line_format).expect("Error to write in the file");
             }
             else if y == 3 && i%2 != 0 {
-                file.write_with_format(row_bias + i as u32, y + 1, saturday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, saturday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
             }
             else if i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &white_line_format).expect("Error to write in the file");
             }else{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &light_gray_line_format).expect("Error to write in the file");
             }
         }
     }
@@ -148,9 +155,9 @@ pub fn create_matches_excel(path: String){
     row_bias += 1;
 
     for i in 0..2{
-        file.write_with_format(row_bias, 1 +(i * 3), "ORA", &header_table_format).expect("Error to write in the file");
-        file.write_with_format(row_bias, 2 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
-        file.write_with_format(row_bias, 3 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, i * 3, "ORA", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, 1 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, 2 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
     }
 
     row_bias += 1;
@@ -160,21 +167,21 @@ pub fn create_matches_excel(path: String){
             file.set_row_height(i as u32 + row_bias, 35).expect("Error to write in the file");
 
             if y == 0 && i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, sunday_time[i].clone(), &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, sunday_time[i].clone(), &white_line_format).expect("Error to write in the file");
             }
             else if y == 0 && i%2 != 0{
-                file.write_with_format(row_bias + i as u32, y + 1, sunday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, sunday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
             }
             else if y == 3 && i%2 == 0 {
-                file.write_with_format(row_bias + i as u32, y + 1, sunday_time[i].clone(), &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, sunday_time[i].clone(), &white_line_format).expect("Error to write in the file");
             }
             else if y == 3 && i%2 != 0 {
-                file.write_with_format(row_bias + i as u32, y + 1, sunday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, sunday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
             }
             else if i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &white_line_format).expect("Error to write in the file");
             }else{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &light_gray_line_format).expect("Error to write in the file");
             }
         }
     }
@@ -190,12 +197,12 @@ pub fn create_matches_excel(path: String){
             let name_p2 = shorten_name(matche.player_2.name.clone());
 
             if row % 2 == 1{
-                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_white).expect("Error to write in the file");
-                file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_white).expect("Error to write in the file");
+                file.write_with_format(row, col - 2, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_white).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{:?}", matche.player_1.category), &normal_text_format_white).expect("Error to write in the file");
             }
             else{
-                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_light_gray).expect("Error to write in the file");
-                file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_light_gray).expect("Error to write in the file");
+                file.write_with_format(row, col - 2, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name), &normal_text_format_light_gray).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{:?}", matche.player_1.category), &normal_text_format_light_gray).expect("Error to write in the file");
             }
             
         }
@@ -206,27 +213,31 @@ pub fn create_matches_excel(path: String){
 
     let file = files_excel.add_worksheet().set_name("Circolo").expect("Error in creation file");
 
+    file.set_landscape();
+    file.set_margins(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    file.set_paper_size(9);
+
     let mut row_bias = 2;
 
 
-    file.write_with_format(row_bias, 5, format!("Sabato: {} - Circolo", saturday), &h1_format).expect("Error to write in the file");
+    file.write_with_format(row_bias, 4, format!("Sabato: {} - Circolo", saturday), &h1_format).expect("Error to write in the file");
 
     row_bias +=2;
 
     for i in 0..5{
-        file.write_with_format(row_bias, 1 +(i * 3), "ORA", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, i * 3, "ORA", &header_table_format).expect("Error to write in the file");
 
         if i >= 4{
-            file.write_with_format(row_bias, 2 + (i * 3), format!("CAMPO {}", i + 2), &header_table_format).expect("Error to write in the file");
+            file.write_with_format(row_bias, 1 + (i * 3), format!("CAMPO {}", i + 2), &header_table_format).expect("Error to write in the file");
         }else{
-            file.write_with_format(row_bias, 2 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
+            file.write_with_format(row_bias, 1 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
         }
         
-        file.write_with_format(row_bias, 3 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, 2 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
 
-        file.set_column_width(1 + (i * 3), 8).expect("Error to write in the file");
-        file.set_column_width(2 + (i * 3), 20).expect("Error to write in the file");
-        file.set_column_width(3 + (i * 3), 8).expect("Error to write in the file");
+        file.set_column_width(i * 3, 6).expect("Error to write in the file");
+        file.set_column_width(1 + (i * 3), 15).expect("Error to write in the file");
+        file.set_column_width(2 + (i * 3), 4).expect("Error to write in the file");
     }
     row_bias += 1;
 
@@ -236,15 +247,15 @@ pub fn create_matches_excel(path: String){
             file.set_row_height(i as u32 + row_bias, 35).expect("Error to write in the file");
 
             if y%3 == 0 && i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, saturday_time[i].clone(), &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, saturday_time[i].clone(), &white_line_format).expect("Error to write in the file");
             }
             else if y%3 == 0 && i%2 != 0{
-                file.write_with_format(row_bias + i as u32, y + 1, saturday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, saturday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
             }
             else if i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &white_line_format).expect("Error to write in the file");
             }else{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &light_gray_line_format).expect("Error to write in the file");
             }
         }
     }
@@ -257,15 +268,15 @@ pub fn create_matches_excel(path: String){
 
     for i in 0..5{
 
-        file.write_with_format(row_bias, 1 +(i * 3), "ORA", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, i * 3, "ORA", &header_table_format).expect("Error to write in the file");
         
         if i >= 4{
-            file.write_with_format(row_bias, 2 + (i * 3), format!("CAMPO {}", i + 2), &header_table_format).expect("Error to write in the file");
+            file.write_with_format(row_bias, 1 + (i * 3), format!("CAMPO {}", i + 2), &header_table_format).expect("Error to write in the file");
         }else{
-            file.write_with_format(row_bias, 2 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
+            file.write_with_format(row_bias, 1 + (i * 3), format!("CAMPO {}", i + 1), &header_table_format).expect("Error to write in the file");
         }
         
-        file.write_with_format(row_bias, 3 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
+        file.write_with_format(row_bias, 2 + (i * 3), "TAB.", &header_table_format).expect("Error to write in the file");
     }
 
     row_bias += 1;
@@ -275,15 +286,15 @@ pub fn create_matches_excel(path: String){
             file.set_row_height(i as u32 + row_bias, 35).expect("Error to write in the file");
 
             if y%3 == 0 && i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, sunday_time[i].clone(), &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, sunday_time[i].clone(), &white_line_format).expect("Error to write in the file");
             }
             else if y%3 == 0 && i%2 != 0{
-                file.write_with_format(row_bias + i as u32, y + 1, sunday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, sunday_time[i].clone(), &light_gray_line_format).expect("Error to write in the file");
             }
             else if i%2 == 0{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &white_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &white_line_format).expect("Error to write in the file");
             }else{
-                file.write_with_format(row_bias + i as u32, y + 1, "", &light_gray_line_format).expect("Error to write in the file");
+                file.write_with_format(row_bias + i as u32, y, "", &light_gray_line_format).expect("Error to write in the file");
             }
         }
     }
@@ -299,12 +310,12 @@ pub fn create_matches_excel(path: String){
             let name_p2 = shorten_name(matche.player_2.name.clone());
 
             if row % 2 == 1{
-                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name.clone()), &normal_text_format_white).expect("Error to write in the file");
-                file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_white).expect("Error to write in the file");
+                file.write_with_format(row, col - 2, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name.clone()), &normal_text_format_white).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{:?}", matche.player_1.category), &normal_text_format_white).expect("Error to write in the file");
             }
             else{
-                file.write_with_format(row, col - 1, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name.clone()), &normal_text_format_light_gray).expect("Error to write in the file");
-                file.write_with_format(row, col, format!("{:?}", matche.player_1.category), &normal_text_format_light_gray).expect("Error to write in the file");
+                file.write_with_format(row, col - 2, format!("{} \n {}", matche.player_1.name.clone(), matche.player_2.name.clone()), &normal_text_format_light_gray).expect("Error to write in the file");
+                file.write_with_format(row, col - 1, format!("{:?}", matche.player_1.category), &normal_text_format_light_gray).expect("Error to write in the file");
             }
             
         }

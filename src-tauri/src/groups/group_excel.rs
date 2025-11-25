@@ -1,21 +1,13 @@
 use rust_xlsxwriter::*;
-use crate::players::Category;
+use crate::groups::group_scheduler::PlayerMatch;
+use crate::{get_resource, players::*};
 use crate::groups::group::*;
+use rusqlite::{Connection, OptionalExtension, Result as SqlResult, params};
 
 #[tauri::command]
 pub fn create_excel_group(path: String){
 
     let mut files_excel = Workbook::new();
-
-    let colors: [u32; 7] = [
-        0xffff99,
-        0xdae9f8,
-        0xf7c7ac,
-        0xc1f0c8,
-        0xf2ceef,
-        0xcaedfb,
-        0xdaf2d0
-    ];
 
     let permanet_name: [String; 3] = [
         "vittorie".to_string(),
@@ -23,7 +15,6 @@ pub fn create_excel_group(path: String){
         "calssifica".to_string()
     ];
 
-    let mut k = 0;
     let cols_per_print = 21;
 
     for category in Category::all_playable_categories(){
@@ -32,7 +23,6 @@ pub fn create_excel_group(path: String){
         let header_format = Format::new()
             .set_bold()
             .set_font_size(72)
-            .set_background_color(Color::RGB(colors[k]))
             .set_font_color(Color::RGB(0x275317 as u32))
             .set_font_name("Aptos Narrow");
 
@@ -40,7 +30,6 @@ pub fn create_excel_group(path: String){
             .set_bold()
             .set_font_size(15)
             .set_font_color(Color::RGB(0x275317 as u32))
-            .set_background_color(Color::RGB(colors[k]))
             .set_underline(FormatUnderline::Single)
             .set_font_name("Aptos Narrow");
 
@@ -48,7 +37,6 @@ pub fn create_excel_group(path: String){
             .set_bold()
             .set_font_size(11)
             .set_border_bottom(FormatBorder::Thin)
-            .set_background_color(Color::RGB(colors[k]))
             .set_text_wrap()
             .set_font_name("Aptos Narrow");
 
@@ -57,16 +45,16 @@ pub fn create_excel_group(path: String){
             .set_background_color(Color::Black);
 
         let table_format = Format::new()
-            .set_border(FormatBorder::Thin)
-            .set_background_color(Color::RGB(colors[k]));
+            .set_align(FormatAlign::Center)
+            .set_border(FormatBorder::Thin);
 
-        let background_color_format = Format::new()
-            .set_background_color(Color::RGB(colors[k]));
+        let background_color_format = Format::new();
 
         let right_table_format = Format::new()
             .set_font_size(9)
-            .set_font_name("Aptos Narrow")
-            .set_background_color(Color::RGB(colors[k]));
+            .set_font_name("Aptos Narrow");
+
+        let conn = Connection::open(get_resource("databases/players.db")).unwrap();
 
 
         let file = files_excel.add_worksheet().set_name(category.to_string()).expect("Error in creation file");
@@ -111,12 +99,21 @@ pub fn create_excel_group(path: String){
                 }
                 
                 for i in 0..4{
-                    for y in 0..4{
-                        file.write_with_format(row_bias + i, col_bias + 1 + y, "", &table_format).expect("Error to write in the file");
-                        file.set_column_width(col_bias + 1 + y, 6).expect("Error to write in the file");
 
-                        if i == y as u32{
-                            file.write_with_format(row_bias + i, col_bias + 1 + y, "", &black_spot).expect("Error to write in the file");
+                    let player_1 = group.players[i].clone();
+
+                    for y in 0..4{
+
+                        let player_2 = group.players[y].clone();
+
+                        todo!("PLAYER MATCH");
+                        //let player_match = ;
+
+                        //file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, format!("{}-{} \n {}-{} \n {}-{}", player_match.set_1_p1, player_match.set_1_p2, player_match.set_2_p1, player_match.set_2_p2, player_match.tie_p1, player_match.tie_p2), &table_format).expect("Error to write in the file");
+                        file.set_column_width(col_bias + 1 + y as u16, 6).expect("Error to write in the file");
+
+                        if i as u32 == y as u32{
+                            file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, "", &black_spot).expect("Error to write in the file");
                         }
 
                     }
@@ -151,8 +148,6 @@ pub fn create_excel_group(path: String){
                 }
             }
         }
-
-        k += 1;
     }
     files_excel.save(path).expect("Error to save the file");
 }
