@@ -2,7 +2,8 @@ use rust_xlsxwriter::*;
 use crate::groups::group_scheduler::PlayerMatch;
 use crate::{get_resource, players::*};
 use crate::groups::group::*;
-use rusqlite::{Connection, OptionalExtension, Result as SqlResult, params};
+use rusqlite::{Connection, OptionalExtension, Result, params};
+use serde_rusqlite::{from_rows, to_params_named};
 
 #[tauri::command]
 pub fn create_excel_group(path: String){
@@ -48,6 +49,13 @@ pub fn create_excel_group(path: String){
             .set_align(FormatAlign::Center)
             .set_border(FormatBorder::Thin);
 
+        let player_match_format = Format::new()
+            .set_bold()
+            .set_border(FormatBorder::Thin)
+            .set_text_wrap()
+            .set_font_size(9)
+            .set_align(FormatAlign::Center);
+
         let background_color_format = Format::new();
 
         let right_table_format = Format::new()
@@ -58,6 +66,10 @@ pub fn create_excel_group(path: String){
 
 
         let file = files_excel.add_worksheet().set_name(category.to_string()).expect("Error in creation file");
+
+        file.set_landscape();
+        file.set_margins(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        file.set_paper_size(9);
 
         let mut row_bias = 1;
         let mut col_bias = 1;
@@ -97,6 +109,12 @@ pub fn create_excel_group(path: String){
                     file.set_row_height(row_bias + (y as u32), 40).expect("Error to write in the file");
                     file.set_column_width(col_bias, 14).expect("Error to write in the file");
                 }
+
+                for i in 0..4{
+                    for y in 0..4{
+                        file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, "", &table_format).expect("Error to write in the file");
+                    }
+                }
                 
                 for i in 0..4{
 
@@ -106,15 +124,29 @@ pub fn create_excel_group(path: String){
 
                         let player_2 = group.players[y].clone();
 
-                        todo!("PLAYER MATCH");
-                        //let player_match = ;
+                        let vec_player_match = get_player_match(&conn, player_1.id.expect("A"), player_2.id.expect("A")).expect("A");
 
-                        //file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, format!("{}-{} \n {}-{} \n {}-{}", player_match.set_1_p1, player_match.set_1_p2, player_match.set_2_p1, player_match.set_2_p2, player_match.tie_p1, player_match.tie_p2), &table_format).expect("Error to write in the file");
+                        if(vec_player_match.len() > 0){
+                            let player_match = vec_player_match[0].clone();
+                            
+                            if(player_match.tie_p1 != 0 || player_match.tie_p2 != 0){
+                                file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, format!("{}-{} \n {}-{} \n {}-{}", player_match.set_1_p1, player_match.set_1_p2, player_match.set_2_p1, player_match.set_2_p2, player_match.tie_p1, player_match.tie_p2), &player_match_format).expect("Error to write in the file");
+                                file.write_with_format(row_bias + y as u32, col_bias + 1 + i as u16, format!("{}-{} \n {}-{} \n {}-{}", player_match.set_1_p2, player_match.set_1_p1, player_match.set_2_p2, player_match.set_2_p1, player_match.tie_p2, player_match.tie_p1), &player_match_format).expect("Error to write in the file");
+                            }
+                            else{
+                                file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, format!("{}-{} \n {}-{}", player_match.set_1_p1, player_match.set_1_p2, player_match.set_2_p1, player_match.set_2_p2), &player_match_format).expect("Error to write in the file");
+                                file.write_with_format(row_bias + y as u32, col_bias + 1 + i as u16, format!("{}-{} \n {}-{}", player_match.set_1_p2, player_match.set_1_p1, player_match.set_2_p2, player_match.set_2_p1), &player_match_format).expect("Error to write in the file");
+                            }
+                            
+                        }
+                        else{
+                            if i as u32 == y as u32{
+                                file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, "", &black_spot).expect("Error to write in the file");
+                            }
+                        }
+
                         file.set_column_width(col_bias + 1 + y as u16, 6).expect("Error to write in the file");
 
-                        if i as u32 == y as u32{
-                            file.write_with_format(row_bias + i as u32, col_bias + 1 + y as u16, "", &black_spot).expect("Error to write in the file");
-                        }
 
                     }
                 }
@@ -150,4 +182,16 @@ pub fn create_excel_group(path: String){
         }
     }
     files_excel.save(path).expect("Error to save the file");
+}
+
+pub fn get_player_match(conn: &Connection, player_1_id: i32, player_2_id: i32)-> Result<Vec<PlayerMatch>>{
+    let mut stmt = conn.prepare(
+            format!("SELECT * FROM PlayerMatch WHERE player_1 = {} AND player_2 = {}", player_1_id, player_2_id).as_str()
+        ).expect("Error to preapare the query");
+
+        let rows = stmt.query([]).expect("Errir to query");
+
+        from_rows::<PlayerMatch>(rows)
+            .map(|r| r.map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e))))
+            .collect::<rusqlite::Result<Vec<_>>>()
 }
